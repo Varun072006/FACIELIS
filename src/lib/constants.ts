@@ -1,0 +1,53 @@
+export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  MANAGER: 'MANAGER',
+  AUDITOR: 'AUDITOR',
+  TECHNICIAN: 'TECHNICIAN',
+} as const;
+
+export const DEFECT_PRIORITY = {
+  P1: 'P1',
+  P2: 'P2',
+  P3: 'P3',
+  P4: 'P4',
+} as const;
+
+export const DEFECT_SEVERITY = {
+  CRITICAL: 'CRITICAL',
+  HIGH: 'HIGH',
+  MEDIUM: 'MEDIUM',
+  LOW: 'LOW',
+} as const;
+
+export const AUDIT_STATUS = {
+  SCHEDULED: 'SCHEDULED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  PENDING_REVIEW: 'PENDING_REVIEW',
+  COMPLETED: 'COMPLETED',
+} as const;
+
+export const DEFECT_STATUS = {
+  OPEN: 'OPEN',
+  ASSIGNED: 'ASSIGNED',
+  REPAIRED_PENDING_CROSS: 'REPAIRED_PENDING_CROSS',
+  VERIFIED: 'VERIFIED',
+  REOPENED: 'REOPENED',
+} as const;
+
+export const FITNESS_STATUS = {
+  FIT: 'FIT',
+  UNFIT: 'UNFIT',
+  CONDITIONAL: 'CONDITIONAL',
+} as const;
+
+export const COLOR_TOKENS = {
+  WHITE: '#FFFFFF',
+  SURFACE: '#FAFAFA',
+  TEXT_MAIN: '#171717',
+  ROYAL_BLUE: '#173B72',
+  ROYAL_BLUE_HOVER: '#1E4A8E',
+  BORDER: '#E5E7EB',
+  SUCCESS: '#16A34A',
+  WARNING: '#D97706',
+  CRITICAL: '#DC2626',
+};

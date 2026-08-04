@@ -1,0 +1,339 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  AUDITOR
+  TECHNICIAN
+}
+
+enum DefectPriority {
+  P1
+  P2
+  P3
+  P4
+}
+
+enum DefectSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum AuditStatus {
+  SCHEDULED
+  IN_PROGRESS
+  PENDING_REVIEW
+  COMPLETED
+}
+
+enum DefectStatus {
+  OPEN
+  ASSIGNED
+  REPAIRED_PENDING_CROSS
+  VERIFIED
+  REOPENED
+}
+
+enum FitnessStatus {
+  FIT
+  UNFIT
+  CONDITIONAL
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  address   String?
+  campuses  Campus[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Campus {
+  id             String       @id @default(uuid())
+  name           String
+  code           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  buildings      Building[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Building {
+  id        String   @id @default(uuid())
+  name      String
+  code      String
+  campusId  String
+  campus    Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  floors    Floor[]
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Floor {
+  id         String   @id @default(uuid())
+  name       String
+  level      Int
+  buildingId String
+  building   Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  venues     Venue[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Venue {
+  id                  String               @id @default(uuid())
+  name                String
+  code                String               @unique
+  type                String               @default("Cabin/Room")
+  floorId             String
+  floor               Floor                @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  assets              Asset[]
+  audits              Audit[]
+  crossAuditQuestions CrossAuditQuestion[]
+  scores              Score[]
+  certificates        Certificate[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  users       User[]
+  defects     Defect[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model User {
+  id           String      @id @default(uuid())
+  email        String      @unique
+  passwordHash String
+  name         String
+  role         Role
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  buildingId   String?
+  building     Building?   @relation(fields: [buildingId], references: [id])
+  audits       Audit[]     @relation("AuditorAudits")
+  repairs      Repair[]
+  defects      Defect[]    @relation("TechnicianDefects")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model AssetCategory {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  code            String           @unique
+  description     String?
+  assets          Asset[]
+  referenceImages ReferenceImage[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Asset {
+  id               String            @id @default(uuid())
+  serialNo         String            @unique
+  name             String
+  assetCategoryId  String
+  assetCategory    AssetCategory     @relation(fields: [assetCategoryId], references: [id])
+  venueId          String
+  venue            Venue             @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  qrCode           String?
+  installationDate DateTime?
+  status           String            @default("ACTIVE")
+  components       Component[]
+  inspectionItems  InspectionItem[]
+  defects          Defect[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Component {
+  id              String           @id @default(uuid())
+  name            String
+  code            String
+  assetId         String
+  asset           Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  inspectionItems InspectionItem[]
+  defects         Defect[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model ReferenceImage {
+  id                 String        @id @default(uuid())
+  assetCategoryId    String
+  assetCategory      AssetCategory @relation(fields: [assetCategoryId], references: [id], onDelete: Cascade)
+  goodImageUrl       String?
+  acceptableImageUrl String?
+  defectiveImageUrl  String?
+  description        String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+}
+
+model Rule {
+  id             String         @id @default(uuid())
+  componentType  String
+  keywordMatch   String?
+  category       String
+  priority       DefectPriority
+  severity       DefectSeverity
+  departmentName String
+  slaHours       Int
+  autoEscalate   Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Audit {
+  id                  String               @id @default(uuid())
+  auditNo             String               @unique
+  venueId             String
+  venue               Venue                @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  auditorId           String
+  auditor             User                 @relation("AuditorAudits", fields: [auditorId], references: [id])
+  managerId           String?
+  status              AuditStatus          @default(SCHEDULED)
+  scheduledDate       DateTime
+  completedDate       DateTime?
+  inspectionItems     InspectionItem[]
+  crossAuditResponses CrossAuditResponse[]
+  score               Score?
+  certificate         Certificate?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model InspectionItem {
+  id         String   @id @default(uuid())
+  auditId    String
+  audit      Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  assetId    String
+  asset      Asset    @relation(fields: [assetId], references: [id])
+  componentId String
+  component  Component @relation(fields: [componentId], references: [id])
+  status     String   // PASS or FAIL
+  photoUrl   String?
+  geotagLat  Float?
+  geotagLng  Float?
+  remark     String?
+  timestamp  DateTime @default(now())
+  defect     Defect?
+}
+
+model Defect {
+  id               String         @id @default(uuid())
+  defectNo         String         @unique
+  inspectionItemId String         @unique
+  inspectionItem   InspectionItem @relation(fields: [inspectionItemId], references: [id], onDelete: Cascade)
+  assetId          String
+  asset            Asset          @relation(fields: [assetId], references: [id])
+  componentId      String
+  component        Component      @relation(fields: [componentId], references: [id])
+  category         String
+  priority         DefectPriority
+  severity         DefectSeverity
+  departmentId     String
+  department       Department     @relation(fields: [departmentId], references: [id])
+  technicianId     String?
+  technician       User?          @relation("TechnicianDefects", fields: [technicianId], references: [id])
+  status           DefectStatus   @default(OPEN)
+  slaDeadline      DateTime
+  isOverdue        Boolean        @default(false)
+  repair           Repair?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model Repair {
+  id                  String   @id @default(uuid())
+  defectId            String   @unique
+  defect              Defect   @relation(fields: [defectId], references: [id], onDelete: Cascade)
+  technicianId        String
+  technician          User     @relation(fields: [technicianId], references: [id])
+  repairProofPhotoUrl String
+  geotagLat           Float?
+  geotagLng           Float?
+  remark              String
+  completedAt         DateTime @default(now())
+}
+
+model CrossAuditQuestion {
+  id            String   @id @default(uuid())
+  venueId       String
+  venue         Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  question      String
+  assetType     String
+  expectedCount Int?
+  optionA       String
+  optionB       String
+  optionC       String
+  optionD       String
+  correctAnswer String   // "A", "B", "C", "D"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  responses     CrossAuditResponse[]
+}
+
+model CrossAuditResponse {
+  id              String             @id @default(uuid())
+  auditId         String
+  audit           Audit              @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  questionId      String
+  question        CrossAuditQuestion @relation(fields: [questionId], references: [id])
+  auditorResponse String
+  isCorrect       Boolean
+  createdAt       DateTime           @default(now())
+}
+
+model Score {
+  id                    String   @id @default(uuid())
+  auditId               String   @unique
+  audit                 Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  venueId               String
+  venue                 Venue    @relation(fields: [venueId], references: [id])
+  housekeepingScore     Float
+  electricalScore       Float
+  plumbingScore         Float
+  networkScore          Float
+  documentationScore    Float
+  overallScore          Float
+  criticalFailuresCount Int
+  isFit                 Boolean
+  createdAt             DateTime @default(now())
+}
+
+model Certificate {
+  id                 String        @id @default(uuid())
+  certificateNo      String        @unique
+  venueId            String
+  venue              Venue         @relation(fields: [venueId], references: [id])
+  auditId            String        @unique
+  audit              Audit         @relation(fields: [auditId], references: [id])
+  fitnessStatus      FitnessStatus
+  overallScore       Float
+  validFrom          DateTime      @default(now())
+  validUntil         DateTime
+  qrCode             String?
+  approvedByManagerId String?
+  createdAt          DateTime      @default(now())
+}
