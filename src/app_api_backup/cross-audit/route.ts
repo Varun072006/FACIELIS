@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db';
 import { getCrossAuditItemsForAuditor, submitCrossAuditVerification } from '@/engines/cross-audit.engine';
+import { calculateAuditScores } from '@/engines/score.engine';
+import { generateFacilityCertificate } from '@/engines/certificate.engine';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -37,6 +39,21 @@ export async function POST(request: Request) {
           },
         });
       }
+
+      // Mark audit as completed
+      await prisma.audit.update({
+        where: { id: auditId },
+        data: {
+          status: 'COMPLETED',
+          completedDate: new Date(),
+        },
+      });
+
+      // Run Score Engine
+      await calculateAuditScores(auditId);
+
+      // Run Certificate Engine
+      await generateFacilityCertificate(auditId);
     }
 
     return NextResponse.json({ success: true });

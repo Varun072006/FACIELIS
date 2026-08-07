@@ -21,12 +21,21 @@ export async function checkAndUpdateOverdueDefects() {
 export async function getSLAMetrics() {
   await checkAndUpdateOverdueDefects();
 
-  const totalDefects = await prisma.defect.count();
-  const overdueCount = await prisma.defect.count({ where: { isOverdue: true } });
-  const openCount = await prisma.defect.count({ where: { status: 'OPEN' } });
-  const assignedCount = await prisma.defect.count({ where: { status: 'ASSIGNED' } });
-  const pendingCrossCount = await prisma.defect.count({ where: { status: 'REPAIRED_PENDING_CROSS' } });
-  const verifiedCount = await prisma.defect.count({ where: { status: 'VERIFIED' } });
+  const [
+    totalDefects,
+    overdueCount,
+    openCount,
+    assignedCount,
+    pendingCrossCount,
+    verifiedCount,
+  ] = await Promise.all([
+    prisma.defect.count(),
+    prisma.defect.count({ where: { isOverdue: true } }),
+    prisma.defect.count({ where: { status: 'OPEN' } }),
+    prisma.defect.count({ where: { status: 'ASSIGNED' } }),
+    prisma.defect.count({ where: { status: 'REPAIRED_PENDING_CROSS' } }),
+    prisma.defect.count({ where: { status: 'VERIFIED' } }),
+  ]);
 
   const slaComplianceRate = totalDefects > 0 
     ? Math.round(((totalDefects - overdueCount) / totalDefects) * 100 * 10) / 10 

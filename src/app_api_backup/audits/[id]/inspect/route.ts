@@ -22,13 +22,15 @@ export async function POST(
     for (const item of items) {
       const { assetId, componentId, componentName, status, photoUrl, geotagLat, geotagLng, remark } = item;
 
+      const normalizedStatus = (status === 'DEFECTIVE' || status === 'FAIL') ? 'FAIL' : 'PASS';
+
       // Upsert inspection item
       const inspectionItem = await prisma.inspectionItem.create({
         data: {
           auditId,
           assetId,
           componentId,
-          status,
+          status: normalizedStatus,
           photoUrl: photoUrl || null,
           geotagLat: geotagLat || null,
           geotagLng: geotagLng || null,
@@ -37,7 +39,7 @@ export async function POST(
       });
 
       // If FAILED -> Defect Engine -> Rule Engine -> Auto Assignment Engine
-      if (status === 'FAIL') {
+      if (normalizedStatus === 'FAIL') {
         const defect = await createDefectFromInspection(
           inspectionItem.id,
           assetId,

@@ -42,23 +42,27 @@ export function PhotoCapture({ onPhotoCaptured, label = 'Capture Geo-tagged Proo
     getGeoLocation();
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', 'defects');
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64Image = reader.result as string;
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image, type: 'defects' }),
+        });
 
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setPhotoUrl(data.url);
-        onPhotoCaptured(data.url, coords?.lat || 11.4965, coords?.lng || 77.2763);
-      }
+        if (res.ok) {
+          const data = await res.json();
+          setPhotoUrl(data.url);
+          onPhotoCaptured(data.url, coords?.lat || 11.4965, coords?.lng || 77.2763);
+        } else {
+          console.error('Upload server error status:', res.status);
+        }
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
     } catch (error) {
       console.error('Upload failed:', error);
-    } finally {
       setUploading(false);
     }
   };

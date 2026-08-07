@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
@@ -23,10 +24,17 @@ import {
 } from 'lucide-react';
 
 export function Sidebar() {
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
-  if (!user) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !user) {
+    return <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 z-30" />;
+  }
 
   const role = user.role;
 
@@ -101,6 +109,7 @@ export function Sidebar() {
             <Link
               key={link.href + link.label}
               href={link.href}
+              prefetch={true}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-[#173B72] text-white shadow-sm'

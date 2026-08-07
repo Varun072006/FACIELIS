@@ -33,6 +33,7 @@ enum AuditStatus {
   IN_PROGRESS
   PENDING_REVIEW
   COMPLETED
+  MISSED
 }
 
 enum DefectStatus {
@@ -135,6 +136,9 @@ model User {
   defects      Defect[]    @relation("TechnicianDefects")
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
+
+  @@index([role])
+  @@index([departmentId])
 }
 
 model AssetCategory {
@@ -164,6 +168,10 @@ model Asset {
   defects          Defect[]
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+
+  @@index([venueId])
+  @@index([assetCategoryId])
+  @@index([status])
 }
 
 model Component {
@@ -176,6 +184,8 @@ model Component {
   defects         Defect[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([assetId])
 }
 
 model ReferenceImage {
@@ -214,13 +224,21 @@ model Audit {
   managerId           String?
   status              AuditStatus          @default(SCHEDULED)
   scheduledDate       DateTime
+  startTime           DateTime?
+  dueDate             DateTime?
   completedDate       DateTime?
+  missedReason        String?
+  missedAt            DateTime?
   inspectionItems     InspectionItem[]
   crossAuditResponses CrossAuditResponse[]
   score               Score?
   certificate         Certificate?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+
+  @@index([auditorId])
+  @@index([venueId])
+  @@index([status])
 }
 
 model InspectionItem {
@@ -238,6 +256,11 @@ model InspectionItem {
   remark     String?
   timestamp  DateTime @default(now())
   defect     Defect?
+
+  @@index([auditId])
+  @@index([assetId])
+  @@index([componentId])
+  @@index([status])
 }
 
 model Defect {
@@ -262,6 +285,12 @@ model Defect {
   repair           Repair?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
+
+  @@index([technicianId])
+  @@index([departmentId])
+  @@index([status])
+  @@index([isOverdue])
+  @@index([assetId])
 }
 
 model Repair {
@@ -275,6 +304,8 @@ model Repair {
   geotagLng           Float?
   remark              String
   completedAt         DateTime @default(now())
+
+  @@index([technicianId])
 }
 
 model CrossAuditQuestion {
@@ -320,6 +351,8 @@ model Score {
   criticalFailuresCount Int
   isFit                 Boolean
   createdAt             DateTime @default(now())
+
+  @@index([venueId])
 }
 
 model Certificate {
@@ -336,4 +369,7 @@ model Certificate {
   qrCode             String?
   approvedByManagerId String?
   createdAt          DateTime      @default(now())
+
+  @@index([venueId])
+  @@index([fitnessStatus])
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
 import { AuthProvider } from '@/providers/auth-provider';
+import { WarmupProvider } from '@/providers/warmup-provider';
 
 export const metadata: Metadata = {
   title: 'FACIELIS — Facility Assurance Platform',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body>
         <QueryProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <WarmupProvider>{children}</WarmupProvider>
+          </AuthProvider>
         </QueryProvider>
       </body>
     </html>

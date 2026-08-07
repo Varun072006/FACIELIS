@@ -8,7 +8,8 @@ export async function GET(request: Request) {
   const departmentId = searchParams.get('departmentId');
   const status = searchParams.get('status');
 
-  await checkAndUpdateOverdueDefects();
+  // Run overdue check non-blocking
+  checkAndUpdateOverdueDefects().catch(() => {});
 
   const where: any = {};
   if (technicianId) where.technicianId = technicianId;
@@ -30,5 +31,9 @@ export async function GET(request: Request) {
     orderBy: { createdAt: 'desc' },
   });
 
-  return NextResponse.json(defects);
+  return NextResponse.json(defects, {
+    headers: {
+      'Cache-Control': 'private, max-age=5, stale-while-revalidate=30',
+    },
+  });
 }

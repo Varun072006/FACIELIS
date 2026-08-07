@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/providers/auth-provider';
 import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('admin@facielis.com');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { login } = useAuth();
+  const { user, loading, login } = useAuth();
+  const router = useRouter();
 
   const handleLoginWithEmail = async (loginEmail: string) => {
     setError('');
@@ -34,6 +36,40 @@ export default function LoginPage() {
       setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (user) {
+      if (user.role === 'SUPER_ADMIN') router.push('/admin');
+      else if (user.role === 'MANAGER') router.push('/manager');
+      else if (user.role === 'AUDITOR') router.push('/auditor');
+      else if (user.role === 'TECHNICIAN') router.push('/technician');
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const auto = params.get('auto');
+      const role = params.get('role');
+
+      const recentlyLoggedOut = window.sessionStorage.getItem('recently_logged_out');
+      if (recentlyLoggedOut === 'true') {
+        window.sessionStorage.removeItem('recently_logged_out');
+        return;
+      }
+
+      if (auto === 'true') {
+        let targetEmail = 'admin@facielis.com';
+        if (role === 'manager') targetEmail = 'manager@facielis.com';
+        else if (role === 'auditor') targetEmail = 'auditor1@facielis.com';
+        else if (role === 'technician') targetEmail = 'tech.elec@facielis.com';
+
+        setEmail(targetEmail);
+        handleLoginWithEmail(targetEmail);
+      }
+    }
+  }, [user, loading, router]);
 
   const handleFormLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -54,7 +54,7 @@ const GOOD_REFERENCE_GUIDES: Record<string, { title: string; goodImg: string; ac
   CHAIR: {
     title: 'Ergonomic Office Chair Standard',
     goodImg: 'https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=800',
-    acceptableImg: 'https://images.pexels.com/photos/7061386/pexels-photo-7061386.jpeg?auto=compress&cs=tinysrgb&w=800',
+    acceptableImg: 'https://images.pexels.com/photos/1957477/pexels-photo-1957477.jpeg?auto=compress&cs=tinysrgb&w=800',
     defectiveImg: 'https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=800',
     criteria: ['Cushion fabric intact without tears', 'Hydraulic height adjustment smooth', 'All 5 base casters roll freely', 'Backrest and armrests firmly supported'],
     defectWarnings: ['Torn seat mesh/upholstery', 'Broken hydraulic lift sinking automatically', 'Missing or stuck caster wheels'],

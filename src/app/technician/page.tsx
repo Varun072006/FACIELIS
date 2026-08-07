@@ -12,6 +12,7 @@ export default function TechnicianDashboard() {
   const { data: defects, isLoading } = useQuery({
     queryKey: ['technician-defects', user?.id],
     queryFn: () => fetch(`/api/defects?technicianId=${user?.id || ''}`).then((res) => res.json()),
+    enabled: !!user?.id,
   });
 
   return (

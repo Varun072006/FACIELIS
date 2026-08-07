@@ -36,6 +36,7 @@ export default function AdminDashboard() {
         </div>
         <Link
           href="/admin/facilities"
+          prefetch={true}
           className="px-5 py-2.5 rounded-xl bg-white text-[#173B72] font-bold text-xs hover:bg-blue-50 transition-all shadow-sm flex items-center gap-2 whitespace-nowrap"
         >
           <span>Manage Hierarchy</span>
