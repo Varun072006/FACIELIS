@@ -159,26 +159,26 @@ export default function AuditSchedulePage() {
       <Navbar title="Audit Schedule & Auditor Assignment Control Center" />
 
       {/* Header Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-[#173B72] text-white p-4 sm:p-6 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-wider text-blue-200">
             Manager Control Center
           </span>
-          <h2 className="text-xl font-extrabold mt-1">Time-Bounded Audit Scheduling & Approval Station</h2>
+          <h2 className="text-lg sm:text-xl font-extrabold mt-1">Time-Bounded Audit Scheduling & Approval Station</h2>
           <p className="text-xs text-blue-100 mt-1 max-w-xl">
             Assign qualified auditors to venues with strict time windows. Manager approval becomes active once auditor submits the completed checklist.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
           {pendingReviewCount > 0 && (
             <span className="px-3 py-2 rounded-xl bg-amber-400 text-gray-900 font-extrabold text-xs flex items-center gap-1.5 shadow-sm animate-pulse">
-              <AlertTriangle className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4 shrink-0" />
               <span>{pendingReviewCount} Submitted & Awaiting Approval</span>
             </span>
           )}
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2.5 rounded-xl bg-white text-[#173B72] font-bold text-xs hover:bg-blue-50 transition-all shadow-sm flex items-center gap-2"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white text-[#173B72] font-bold text-xs hover:bg-blue-50 transition-all shadow-sm flex items-center justify-center gap-2"
           >
             <Plus className="w-4 h-4" />
             <span>Schedule New Audit</span>
@@ -186,11 +186,11 @@ export default function AuditSchedulePage() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-3">
+      {/* Filter Tabs — Responsive Horizontal Scroll */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-3 overflow-x-auto whitespace-nowrap scrollbar-none">
         <button
           onClick={() => setActiveTab('ALL')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors ${
             activeTab === 'ALL'
               ? 'bg-[#173B72] text-white'
               : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -200,7 +200,7 @@ export default function AuditSchedulePage() {
         </button>
         <button
           onClick={() => setActiveTab('PENDING')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-2 ${
             activeTab === 'PENDING'
               ? 'bg-amber-600 text-white'
               : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -215,7 +215,7 @@ export default function AuditSchedulePage() {
         </button>
         <button
           onClick={() => setActiveTab('COMPLETED')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors ${
             activeTab === 'COMPLETED'
               ? 'bg-emerald-700 text-white'
               : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -225,7 +225,7 @@ export default function AuditSchedulePage() {
         </button>
         <button
           onClick={() => setActiveTab('MISSED')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-2 ${
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-2 ${
             activeTab === 'MISSED'
               ? 'bg-red-700 text-white'
               : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -347,9 +347,9 @@ export default function AuditSchedulePage() {
 
       {/* Schedule Audit Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">Schedule New Time-Bounded Audit</h3>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl my-4">
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">Schedule New Time-Bounded Audit</h3>
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">Select Target Venue</label>
@@ -425,14 +425,14 @@ export default function AuditSchedulePage() {
 
       {/* Audit Analysis & Technician Assignment Approval Modal */}
       {reviewAuditId && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-6 shadow-2xl my-8">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-2xl my-4 sm:my-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div>
                 <span className="px-2.5 py-0.5 rounded bg-blue-50 text-[#173B72] text-[10px] font-extrabold uppercase">
                   Manager Inspection Review Stage
                 </span>
-                <h3 className="text-lg font-extrabold text-gray-900 mt-1">
+                <h3 className="text-base sm:text-lg font-extrabold text-gray-900 mt-1">
                   Audit Analysis & Technician Assignment Approval
                 </h3>
                 <p className="text-xs text-gray-500">Audit No: <strong className="font-mono text-[#173B72]">{auditDetail?.auditNo}</strong> • Venue: <strong className="text-gray-800">{auditDetail?.venue?.name}</strong></p>
@@ -480,9 +480,9 @@ export default function AuditSchedulePage() {
                 {/* Audit Score Summary Cards */}
                 {auditDetail?.score && (
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <h4 className="font-extrabold text-xs text-gray-900 uppercase tracking-wider">Audit Score Analysis & Category Breakdown</h4>
-                      <span className={`px-3 py-1 rounded-full text-xs font-black ${auditDetail.score.isFit ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-black self-start sm:self-auto ${auditDetail.score.isFit ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                         Overall: {auditDetail.score.overallScore}% ({auditDetail.score.isFit ? 'FIT FOR CERTIFICATION' : 'UNFIT'})
                       </span>
                     </div>
@@ -580,10 +580,10 @@ export default function AuditSchedulePage() {
 
                 {/* Footer Buttons — Strictly restricted to PENDING_REVIEW status */}
                 {auditDetail?.status === 'PENDING_REVIEW' ? (
-                  <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                  <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-100">
                     <button
                       onClick={() => rejectAuditMutation.mutate(reviewAuditId)}
-                      className="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-all flex items-center gap-1.5"
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
                     >
                       <XCircle className="w-4 h-4" />
                       <span>Request Re-Inspection</span>
@@ -592,7 +592,7 @@ export default function AuditSchedulePage() {
                     <button
                       onClick={handleApprove}
                       disabled={approveAuditMutation.isPending}
-                      className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-1.5"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>
@@ -606,7 +606,7 @@ export default function AuditSchedulePage() {
                   <div className="flex items-center justify-end pt-4 border-t border-gray-100">
                     <button
                       onClick={() => setReviewAuditId(null)}
-                      className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs transition-all"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold text-xs transition-all"
                     >
                       Close Details
                     </button>

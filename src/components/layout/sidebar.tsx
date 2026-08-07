@@ -21,10 +21,13 @@ import {
   Layers,
   History,
   CheckSquare,
+  Menu,
+  X,
 } from 'lucide-react';
 
 export function Sidebar() {
   const [mounted, setMounted] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -32,8 +35,15 @@ export function Sidebar() {
     setMounted(true);
   }, []);
 
+  // Close mobile drawer when route changes
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   if (!mounted || !user) {
-    return <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 z-30" />;
+    return (
+      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col h-screen sticky top-0 z-30" />
+    );
   }
 
   const role = user.role;
@@ -76,10 +86,10 @@ export function Sidebar() {
   if (role === 'AUDITOR') navLinks = auditorLinks;
   if (role === 'TECHNICIAN') navLinks = technicianLinks;
 
-  return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 z-30">
+  const renderNavContent = () => (
+    <div className="flex flex-col h-full bg-white">
       {/* Brand Header */}
-      <div className="p-5 border-b border-gray-100 flex flex-col">
+      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-bold text-lg shadow-sm">
             F
@@ -89,7 +99,13 @@ export function Sidebar() {
             <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">Facility Assurance</p>
           </div>
         </div>
-        <p className="text-xs text-gray-400 mt-2 italic font-serif">"Where Facilities Earn Trust"</p>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Role Badge */}
@@ -104,12 +120,15 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {navLinks.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href || (link.href !== '/auditor' && link.href !== '/technician' && link.href !== '/manager' && pathname.startsWith(link.href));
+          const isActive =
+            pathname === link.href ||
+            (link.href !== '/auditor' && link.href !== '/technician' && link.href !== '/manager' && pathname.startsWith(link.href));
           return (
             <Link
               key={link.href + link.label}
               href={link.href}
               prefetch={true}
+              onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-[#173B72] text-white shadow-sm'
@@ -137,6 +156,57 @@ export function Sidebar() {
           <LogOut className="w-4 h-4" />
         </button>
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Top App Bar (visible on < lg screens) */}
+      <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-bold text-base shadow-sm">
+            F
+          </div>
+          <div>
+            <h1 className="font-extrabold text-base tracking-tight text-[#173B72]">FACIELIS</h1>
+            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-medium">Facility Assurance</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#173B72]/10 text-[#173B72]">
+            {role.replace('_', ' ')}
+          </span>
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
+            aria-label="Toggle Mobile Menu"
+          >
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Sticky Sidebar (visible on >= lg screens) */}
+      <aside className="hidden lg:flex w-64 border-r border-gray-200 flex-col h-screen sticky top-0 z-30">
+        {renderNavContent()}
+      </aside>
+
+      {/* Mobile Drawer (visible on < lg screens when mobileOpen === true) */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            onClick={() => setMobileOpen(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+          />
+
+          {/* Drawer Sidebar Content */}
+          <aside className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl z-10 flex flex-col">
+            {renderNavContent()}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
