@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import http from 'http';
+import path from 'path';
 import prisma from '../lib/db';
 import authRouter from './routes/auth';
 import auditsRouter from './routes/audits';
@@ -22,6 +23,11 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
+
+// Serve Static Files (Images & Uploads)
+app.use('/images', express.static(path.join(process.cwd(), 'public', 'images')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Healthcheck
 app.get('/api/health', (_req, res) => {
