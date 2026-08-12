@@ -264,7 +264,7 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
         throw new Error(data.error || 'Failed to submit audit');
       }
 
-      router.push(`/auditor/cross-audit/${auditId}`);
+      router.push(`/auditor/integrity/${auditId}`);
     } catch (err: any) {
       setSubmitError(err.message || 'Audit submission failed');
     } finally {

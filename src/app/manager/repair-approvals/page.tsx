@@ -75,10 +75,10 @@ export default function ManagerRepairApprovalsPage() {
       <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <span className="px-3 py-1 rounded-full bg-emerald-400/20 text-xs font-bold uppercase tracking-wider text-emerald-300">
-            Manager Review Step
+            Manager Resolution Approval
           </span>
           <h2 className="text-xl font-extrabold mt-1">Technician Repair Approvals</h2>
-          <p className="text-xs text-blue-100 mt-0.5">Review completed field technician repairs and approve sign-off for final audit verification</p>
+          <p className="text-xs text-blue-100 mt-0.5">Review completed field technician repairs and approve sign-off to automatically store resolution history with date and time</p>
         </div>
         <div className="flex items-center gap-2 bg-white/10 px-4 py-2.5 rounded-xl backdrop-blur-xs text-xs font-semibold">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />

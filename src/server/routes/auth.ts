@@ -15,7 +15,7 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { department: true, building: true },
+      include: { department: true, building: true, ownedVenues: true },
     });
 
     if (!user) {
@@ -48,6 +48,8 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
         name: user.name,
         role: user.role,
         department: user.department?.name,
+        departmentId: user.departmentId,
+        venueId: user.ownedVenues?.[0]?.id || null,
       },
       token,
     });
@@ -81,7 +83,7 @@ router.get('/me', async (req: Request, res: Response): Promise<any> => {
 
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      include: { department: true, building: true },
+      include: { department: true, building: true, ownedVenues: true },
     });
 
     if (!user) {
@@ -96,6 +98,7 @@ router.get('/me', async (req: Request, res: Response): Promise<any> => {
         role: user.role,
         department: user.department?.name,
         departmentId: user.departmentId,
+        venueId: user.ownedVenues?.[0]?.id || null,
       },
     });
   } catch (error: any) {

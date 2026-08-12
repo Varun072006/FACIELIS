@@ -45,6 +45,7 @@ export default function LoginPage() {
       else if (user.role === 'MANAGER') router.push('/manager');
       else if (user.role === 'AUDITOR') router.push('/auditor');
       else if (user.role === 'TECHNICIAN') router.push('/technician');
+      else if (user.role === 'OWNER') router.push('/owner');
       return;
     }
 
@@ -64,6 +65,7 @@ export default function LoginPage() {
         if (role === 'manager') targetEmail = 'manager@facielis.com';
         else if (role === 'auditor') targetEmail = 'auditor1@facielis.com';
         else if (role === 'technician') targetEmail = 'tech.elec@facielis.com';
+        else if (role === 'owner') targetEmail = 'owner@facielis.com';
 
         setEmail(targetEmail);
         handleLoginWithEmail(targetEmail);
@@ -161,6 +163,16 @@ export default function LoginPage() {
                 className="px-3 py-2.5 rounded-lg border border-gray-200 hover:border-[#173B72] hover:bg-[#173B72]/10 text-xs font-bold text-[#173B72] transition-all shadow-2xs text-center"
               >
                 Facility Manager
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('owner@facielis.com');
+                  handleLoginWithEmail('owner@facielis.com');
+                }}
+                className="col-span-2 px-3 py-2.5 rounded-lg border-2 border-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs font-black text-emerald-900 transition-all shadow-sm text-center flex items-center justify-center gap-1.5"
+              >
+                <span>🔑 Venue Owner (Dr. Ananth)</span>
               </button>
               <button
                 type="button"

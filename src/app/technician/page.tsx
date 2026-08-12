@@ -26,7 +26,7 @@ export default function TechnicianDashboard() {
         </span>
         <h2 className="text-xl font-extrabold">Welcome, Technician {user?.name}</h2>
         <p className="text-xs text-blue-100 max-w-xl">
-          Review assigned repair jobs, examine original photo evidence, perform repairs, and submit geo-tagged repair proof for cross-audit validation.
+          Review assigned repair jobs, examine original photo evidence, perform repairs, and submit geo-tagged repair proof for manager resolution approval.
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default function TechnicianDashboard() {
                   {defect.status === 'REPAIRED_PENDING_CROSS' || defect.status === 'VERIFIED' ? (
                     <div className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Repair Submitted (Pending Cross-Audit)</span>
+                      <span>{defect.status === 'VERIFIED' ? 'Repair Approved & Verified' : 'Repair Submitted (Pending Approval)'}</span>
                     </div>
                   ) : (
                     <Link

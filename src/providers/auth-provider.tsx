@@ -7,9 +7,10 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'SUPER_ADMIN' | 'MANAGER' | 'AUDITOR' | 'TECHNICIAN';
+  role: 'SUPER_ADMIN' | 'MANAGER' | 'AUDITOR' | 'TECHNICIAN' | 'OWNER';
   department?: string;
   departmentId?: string;
+  venueId?: string;
 }
 
 interface AuthContextType {
@@ -100,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     else if (userData.role === 'MANAGER') router.push('/manager');
     else if (userData.role === 'AUDITOR') router.push('/auditor');
     else if (userData.role === 'TECHNICIAN') router.push('/technician');
+    else if (userData.role === 'OWNER') router.push('/owner');
   };
 
   const logout = async () => {

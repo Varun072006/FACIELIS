@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { QueryProvider } from '@/providers/query-provider';
 import { AuthProvider } from '@/providers/auth-provider';
+import { NotificationProvider } from '@/providers/notification-provider';
 import { WarmupProvider } from '@/providers/warmup-provider';
 
 export const metadata: Metadata = {
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body>
         <QueryProvider>
           <AuthProvider>
-            <WarmupProvider>{children}</WarmupProvider>
+            <NotificationProvider>
+              <WarmupProvider>{children}</WarmupProvider>
+            </NotificationProvider>
           </AuthProvider>
         </QueryProvider>
       </body>

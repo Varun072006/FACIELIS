@@ -63,6 +63,7 @@ export function Sidebar() {
   const managerLinks = [
     { href: '/manager', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/manager/audit-schedule', label: 'Audit Schedules', icon: ClipboardList },
+    { href: '/manager/owner-questions', label: 'Owner Questionnaires', icon: HelpCircle },
     { href: '/manager/defects', label: 'Open Defects', icon: AlertTriangle },
     { href: '/manager/assignments', label: 'Technician Assignments', icon: Wrench },
     { href: '/manager/repair-approvals', label: 'Technician Repair Approvals', icon: CheckSquare },
@@ -81,10 +82,19 @@ export function Sidebar() {
     { href: '/technician/history', label: 'Repair History & Logs', icon: History },
   ];
 
+  const ownerLinks = [
+    { href: '/owner', label: 'Owner Command Center', icon: LayoutDashboard },
+    { href: '/owner/questionnaire', label: '15-Day Questionnaire', icon: CheckSquare },
+    { href: '/owner/defects', label: 'Report Venue Defect', icon: AlertTriangle },
+    { href: '/owner/audit-reports', label: 'Auditor Reports', icon: ClipboardList },
+    { href: '/owner/repairs', label: 'Technician Repair Logs', icon: Wrench },
+  ];
+
   let navLinks = adminLinks;
   if (role === 'MANAGER') navLinks = managerLinks;
   if (role === 'AUDITOR') navLinks = auditorLinks;
   if (role === 'TECHNICIAN') navLinks = technicianLinks;
+  if (role === 'OWNER') navLinks = ownerLinks;
 
   const renderNavContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -120,9 +130,11 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {navLinks.map((link) => {
           const Icon = link.icon;
-          const isActive =
-            pathname === link.href ||
-            (link.href !== '/auditor' && link.href !== '/technician' && link.href !== '/manager' && pathname.startsWith(link.href));
+          const rootPaths = ['/admin', '/manager', '/auditor', '/technician', '/owner'];
+          const isRootPath = rootPaths.includes(link.href);
+          const isActive = isRootPath
+            ? pathname === link.href
+            : pathname === link.href || pathname.startsWith(link.href + '/');
           return (
             <Link
               key={link.href + link.label}

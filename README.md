@@ -122,7 +122,7 @@ Use these accounts to test each role in the application:
 
 - **Super Admin**: `admin@facielis.com` / `password123`
 - **Facility Manager**: `manager@facielis.com` / `password123`
+- **Venue Owner (Dr. Ananth)**: `owner@facielis.com` / `password123`
 - **Auditor**: `auditor1@facielis.com` / `password123`
 - **Technician**: `tech.elec@facielis.com` / `password123`
 
-# FACIELIS

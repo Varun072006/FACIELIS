@@ -89,7 +89,7 @@ export default function TechnicianHistoryPage() {
       ) : (
         <div className="space-y-4">
           {filteredHistory.map((defect: any) => {
-            const repairDate = defect.repair?.completedAt || defect.updatedAt;
+            const repairDate = defect.status === 'VERIFIED' ? (defect.updatedAt || defect.repair?.completedAt) : (defect.repair?.completedAt || defect.updatedAt);
             const formattedDate = new Date(repairDate).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'short',
@@ -98,6 +98,7 @@ export default function TechnicianHistoryPage() {
             const formattedTime = new Date(repairDate).toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
+              second: '2-digit',
             });
 
             return (
@@ -156,7 +157,7 @@ export default function TechnicianHistoryPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                      <span>Repaired Date: <strong className="text-gray-800">{formattedDate}</strong></span>
+                      <span>{defect.status === 'VERIFIED' ? 'Approved Date:' : 'Submitted Date:'} <strong className="text-gray-800">{formattedDate}</strong></span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-gray-400" />

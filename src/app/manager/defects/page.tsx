@@ -438,7 +438,9 @@ export default function ManagerDefectsPage() {
                   <Archive className="w-5 h-5 text-emerald-600 shrink-0" />
                   <div>
                     <strong className="font-extrabold text-emerald-950 block">Archived Maintenance History Record</strong>
-                    <span className="text-emerald-800">Assigned Technician: <strong>{selectedDefect.technician?.name || 'Assigned Tech'}</strong> • Resolution Approved & Closed.</span>
+                    <span className="text-emerald-800">
+                      Assigned Technician: <strong>{selectedDefect.technician?.name || 'Assigned Tech'}</strong> • Resolution Approved & Stored on <strong>{new Date(selectedDefect.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} at {new Date(selectedDefect.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</strong>.
+                    </span>
                   </div>
                 </div>
                 <button

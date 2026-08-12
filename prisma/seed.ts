@@ -8,6 +8,10 @@ async function main() {
 
   // Clean existing transactional & asset data to allow repeated seed runs
   console.log('Clearing old data for clean re-seed...');
+  await prisma.ownerDefectReport.deleteMany();
+  await prisma.ownerResponse.deleteMany();
+  await prisma.ownerQuestion.deleteMany();
+  await prisma.ownerQuestionBatch.deleteMany();
   await prisma.certificate.deleteMany();
   await prisma.score.deleteMany();
   await prisma.crossAuditResponse.deleteMany();
@@ -62,15 +66,6 @@ async function main() {
     },
   });
 
-  const venue = await prisma.venue.create({
-    data: {
-      name: 'Right Cabin (Cabin 3)',
-      code: 'LC-4F-RC',
-      type: 'Laboratory / Cabin',
-      floorId: floor.id,
-    },
-  });
-
   // 2. Departments
   const deptData = [
     { name: 'Housekeeping', code: 'HK', description: 'Cleaning & sanitation' },
@@ -88,7 +83,7 @@ async function main() {
   // 3. Demo Users
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  const users: Array<{ email: string; name: string; role: 'SUPER_ADMIN' | 'MANAGER' | 'AUDITOR' | 'TECHNICIAN'; dept: string }> = [
+  const users: Array<{ email: string; name: string; role: 'SUPER_ADMIN' | 'MANAGER' | 'AUDITOR' | 'TECHNICIAN' | 'OWNER'; dept: string }> = [
     { email: 'admin@facielis.com', name: 'Super Admin User', role: 'SUPER_ADMIN', dept: 'DOC' },
     { email: 'manager@facielis.com', name: 'Facility Manager', role: 'MANAGER', dept: 'DOC' },
     { email: 'auditor1@facielis.com', name: 'Auditor Ramesh', role: 'AUDITOR', dept: 'DOC' },
@@ -96,10 +91,12 @@ async function main() {
     { email: 'tech.elec@facielis.com', name: 'Tech Selvam (Electrical)', role: 'TECHNICIAN', dept: 'ELEC' },
     { email: 'tech.net@facielis.com', name: 'Tech Karthik (Network)', role: 'TECHNICIAN', dept: 'NET' },
     { email: 'tech.hk@facielis.com', name: 'Tech Murugan (Housekeeping)', role: 'TECHNICIAN', dept: 'HK' },
+    { email: 'owner@facielis.com', name: 'Venue Owner (Dr. Ananth)', role: 'OWNER', dept: 'DOC' },
   ];
 
+  const createdUserMap: Record<string, any> = {};
   for (const u of users) {
-    await prisma.user.create({
+    const createdUser = await prisma.user.create({
       data: {
         email: u.email,
         name: u.name,
@@ -109,7 +106,20 @@ async function main() {
         buildingId: building.id,
       },
     });
+    createdUserMap[u.email] = createdUser;
   }
+
+  const ownerUser = createdUserMap['owner@facielis.com'];
+
+  const venue = await prisma.venue.create({
+    data: {
+      name: 'Right Cabin (Cabin 3)',
+      code: 'LC-4F-RC',
+      type: 'Laboratory / Cabin',
+      floorId: floor.id,
+      ownerId: ownerUser?.id || null,
+    },
+  });
 
   // 4. Asset Categories & Web-Sourced Reference Images
   const categoriesData = [
@@ -546,6 +556,64 @@ async function main() {
 
   for (const q of crossAuditQuestions) {
     await prisma.crossAuditQuestion.create({ data: q });
+  }
+
+  // 8. Owner 15-day Question Batch & 30 Questions Seeding
+  console.log('Seeding 15-day 30-Question Batch for Venue Owner...');
+  const managerUser = createdUserMap['manager@facielis.com'];
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 15); // Valid for 15 days
+
+  const ownerBatch = await prisma.ownerQuestionBatch.create({
+    data: {
+      venueId: venue.id,
+      managerId: managerUser?.id || null,
+      status: 'ACTIVE',
+      expiresAt,
+    },
+  });
+
+  const thirtyOwnerQuestions = [
+    { question: 'Are all main entry door locks, handles, and hinges operating smoothly without sticking?', category: 'Doors & Security' },
+    { question: 'Are all 6 sliding glass windows free of cracks and opening/closing cleanly on their rails?', category: 'Windows & Glazing' },
+    { question: 'Are window curtain fabrics clean, unfrayed, and properly mounted on support rods?', category: 'Furniture & Fixtures' },
+    { question: 'Are all 10 4-seater tables free of surface damage, sharp edges, or wobbling legs?', category: 'Furniture & Fixtures' },
+    { question: 'Are left-end electrical switch boxes on 4-seater tables receiving proper power output?', category: 'Electrical & Power' },
+    { question: 'Are right-end electrical switch boxes on 4-seater tables securely mounted without loose wiring?', category: 'Electrical & Power' },
+    { question: 'Are internal switch box cables insulated with no exposed wires under 4-seater tables?', category: 'Electrical Safety' },
+    { question: 'Are all 10 2-seater tables intact with cable grommet pass-throughs cleanly fitted?', category: 'Furniture & Fixtures' },
+    { question: 'Are electrical socket ports on 2-seater tables delivering stable power to equipment?', category: 'Electrical & Power' },
+    { question: 'Are all 60 ergonomic mesh chairs fully functional with hydraulic height adjustment working?', category: 'Seating & Ergonomics' },
+    { question: 'Are all armrests and backrest lumbar supports on office chairs sturdy and undamaged?', category: 'Seating & Ergonomics' },
+    { question: 'Are 5-star swivel casters on all chairs rolling smoothly across tiled flooring?', category: 'Seating & Ergonomics' },
+    { question: 'Are all 20 workstation PC monitors displaying clear crisp visuals without screen flickering?', category: 'IT & Workstations' },
+    { question: 'Are all CPU towers powering up quietly with cooling fans operating normally?', category: 'IT & Workstations' },
+    { question: 'Are optical mice and mechanical keyboards responsive on all 20 computer stations?', category: 'IT & Workstations' },
+    { question: 'Are Cat6 Ethernet network cables securely clipped into wall/table data ports with connectivity?', category: 'Network Infrastructure' },
+    { question: 'Is the enterprise WiFi Access Point router powered on with active indicator LEDs?', category: 'Network Infrastructure' },
+    { question: 'Is wireless internet coverage strong and accessible across all seating areas in the cabin?', category: 'Network Infrastructure' },
+    { question: 'Is the main tiled floor surface swept, mopped, and free from spills or cracked tiles?', category: 'Housekeeping & Hygiene' },
+    { question: 'Are skirting boards and floor borders clean without accumulated dust or grime?', category: 'Housekeeping & Hygiene' },
+    { question: 'Are false ceiling tiles aligned flush in their grid without water stain discoloration?', category: 'Structural Ceiling' },
+    { question: 'Is the split AC unit cooling effectively and maintaining set temperature reliably?', category: 'HVAC & Climate' },
+    { question: 'Is the AC condensate water drain pipe running clear without dripping into the cabin interior?', category: 'HVAC & Climate' },
+    { question: 'Is the AC remote controller functioning with clear LCD screen and fresh batteries?', category: 'HVAC & Climate' },
+    { question: 'Are all 6 ceiling fans running smoothly without unusual motor noise or wobble at high speed?', category: 'Electrical & Fans' },
+    { question: 'Are wall speed regulators for all ceiling fans adjusting speed levels accurately?', category: 'Electrical & Fans' },
+    { question: 'Are all 20 LED ceiling light fixtures illuminating brightly without dead bulbs or flickering?', category: 'Lighting' },
+    { question: 'Are main electrical panel switch box MCB circuit breakers labeled and free of tripping?', category: 'Electrical Panel' },
+    { question: 'Is the network laser printer online, loaded with paper, and free from paper jams?', category: 'Office Equipment' },
+    { question: 'Are facility emergency exit signage and cabin safety instructions clearly visible?', category: 'Safety & Compliance' },
+  ];
+
+  for (const q of thirtyOwnerQuestions) {
+    await prisma.ownerQuestion.create({
+      data: {
+        batchId: ownerBatch.id,
+        question: q.question,
+        category: q.category,
+      },
+    });
   }
 
   console.log('Seeding completed successfully!');

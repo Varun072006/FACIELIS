@@ -120,7 +120,7 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
             disabled={submitting}
             className="w-full py-3 rounded-xl bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
           >
-            <span>{submitting ? 'Submitting Repair Proof...' : 'Submit Repair (Pending Cross-Audit)'}</span>
+            <span>{submitting ? 'Submitting Repair Proof...' : 'Submit Repair (Pending Approval)'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

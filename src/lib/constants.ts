@@ -3,6 +3,7 @@ export const ROLES = {
   MANAGER: 'MANAGER',
   AUDITOR: 'AUDITOR',
   TECHNICIAN: 'TECHNICIAN',
+  OWNER: 'OWNER',
 } as const;
 
 export const DEFECT_PRIORITY = {
@@ -24,6 +25,8 @@ export const AUDIT_STATUS = {
   IN_PROGRESS: 'IN_PROGRESS',
   PENDING_REVIEW: 'PENDING_REVIEW',
   COMPLETED: 'COMPLETED',
+  MISSED: 'MISSED',
+  OWNER_REVIEWED: 'OWNER_REVIEWED',
 } as const;
 
 export const DEFECT_STATUS = {

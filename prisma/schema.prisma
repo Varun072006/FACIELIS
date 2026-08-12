@@ -12,6 +12,7 @@ enum Role {
   MANAGER
   AUDITOR
   TECHNICIAN
+  OWNER
 }
 
 enum DefectPriority {
@@ -34,6 +35,13 @@ enum AuditStatus {
   PENDING_REVIEW
   COMPLETED
   MISSED
+  OWNER_REVIEWED
+}
+
+enum FitnessStatus {
+  FIT
+  UNFIT
+  CONDITIONAL
 }
 
 enum DefectStatus {
@@ -42,12 +50,6 @@ enum DefectStatus {
   REPAIRED_PENDING_CROSS
   VERIFIED
   REOPENED
-}
-
-enum FitnessStatus {
-  FIT
-  UNFIT
-  CONDITIONAL
 }
 
 model Organization {
@@ -101,11 +103,15 @@ model Venue {
   type                String               @default("Cabin/Room")
   floorId             String
   floor               Floor                @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  ownerId             String?
+  owner               User?                @relation("VenueOwner", fields: [ownerId], references: [id])
   assets              Asset[]
   audits              Audit[]
   crossAuditQuestions CrossAuditQuestion[]
   scores              Score[]
   certificates        Certificate[]
+  ownerQuestionBatches OwnerQuestionBatch[]
+  ownerDefectReports   OwnerDefectReport[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 }
@@ -131,9 +137,12 @@ model User {
   department   Department? @relation(fields: [departmentId], references: [id])
   buildingId   String?
   building     Building?   @relation(fields: [buildingId], references: [id])
+  ownedVenues  Venue[]     @relation("VenueOwner")
   audits       Audit[]     @relation("AuditorAudits")
   repairs      Repair[]
   defects      Defect[]    @relation("TechnicianDefects")
+  ownerResponses      OwnerResponse[]
+  ownerDefectReports  OwnerDefectReport[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
@@ -373,3 +382,68 @@ model Certificate {
   @@index([venueId])
   @@index([fitnessStatus])
 }
+
+model OwnerQuestionBatch {
+  id        String          @id @default(uuid())
+  venueId   String
+  venue     Venue           @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  managerId String?
+  status    String          @default("ACTIVE") // ACTIVE, EXPIRED, AUTO_SUBMITTED, COMPLETED
+  expiresAt DateTime
+  questions OwnerQuestion[]
+  responses OwnerResponse[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([venueId])
+  @@index([status])
+}
+
+model OwnerQuestion {
+  id        String             @id @default(uuid())
+  batchId   String
+  batch     OwnerQuestionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  question  String
+  category  String             @default("General")
+  responses OwnerResponse[]
+  createdAt DateTime           @default(now())
+}
+
+model OwnerResponse {
+  id         String             @id @default(uuid())
+  batchId    String
+  batch      OwnerQuestionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  questionId String
+  question   OwnerQuestion      @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  ownerId    String
+  owner      User               @relation(fields: [ownerId], references: [id])
+  answer     String             // YES, NO, PARTIAL
+  remark     String?
+  answeredAt DateTime           @default(now())
+
+  @@index([batchId])
+  @@index([ownerId])
+}
+
+model OwnerDefectReport {
+  id          String         @id @default(uuid())
+  defectNo    String         @unique
+  venueId     String
+  venue       Venue          @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  ownerId     String
+  owner       User           @relation(fields: [ownerId], references: [id])
+  title       String
+  description String
+  assetName   String?
+  priority    DefectPriority @default(P3)
+  severity    DefectSeverity @default(MEDIUM)
+  status      DefectStatus   @default(OPEN)
+  photoUrl    String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([venueId])
+  @@index([ownerId])
+  @@index([status])
+}
+

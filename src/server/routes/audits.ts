@@ -4,6 +4,7 @@ import { createDefectFromInspection } from '../../engines/defect.engine';
 import { autoAssignTechnician } from '../../engines/assignment.engine';
 import { calculateAuditScores } from '../../engines/score.engine';
 import { generateFacilityCertificate } from '../../engines/certificate.engine';
+import { broadcastNotification } from '../socket';
 
 const router = Router();
 
@@ -154,14 +155,27 @@ router.post('/:id/inspect', async (req: Request, res: Response): Promise<any> =>
       });
 
       if (normalizedStatus === 'FAIL') {
-        await createDefectFromInspection(
+        const defect = await createDefectFromInspection(
           inspectionItem.id,
           assetId,
           componentId,
           componentName || 'Component',
           remark || 'Defect detected during audit'
         );
-        // Defect remains OPEN for manual manager technician assignment
+
+        broadcastNotification('room:role:MANAGER', 'notification:new', {
+          title: '🚨 New Audit Defect Detected',
+          message: `Defect logged for ${componentName || 'Component'}. Requires technician assignment.`,
+          type: 'DEFECT',
+          timestamp: new Date().toISOString(),
+        });
+
+        broadcastNotification('room:role:TECHNICIAN', 'notification:new', {
+          title: '🔧 New Defect Reported in Facility',
+          message: `New defect detected: ${componentName || 'Component'}.`,
+          type: 'DEFECT',
+          timestamp: new Date().toISOString(),
+        });
       }
 
       createdItems.push(inspectionItem);
@@ -177,6 +191,13 @@ router.post('/:id/inspect', async (req: Request, res: Response): Promise<any> =>
       });
 
       await calculateAuditScores(auditId);
+
+      broadcastNotification('room:role:MANAGER', 'notification:new', {
+        title: '📋 Inspection Checklist Submitted',
+        message: `Auditor submitted checklist for audit ${auditId.substring(0, 8)}. Awaiting sign-off.`,
+        type: 'AUDIT',
+        timestamp: new Date().toISOString(),
+      });
     } else {
       await prisma.audit.update({
         where: { id: auditId },
@@ -216,6 +237,13 @@ router.post('/:id/approve', async (req: Request, res: Response): Promise<any> =>
               status: 'ASSIGNED',
             },
           });
+
+          broadcastNotification(`room:user:${assign.technicianId}`, 'notification:new', {
+            title: '⚡ New Repair Job Assigned',
+            message: `Manager assigned you to repair defect ${assign.defectId.substring(0, 8)}.`,
+            type: 'ASSIGNMENT',
+            timestamp: new Date().toISOString(),
+          });
         }
       }
     }
@@ -236,6 +264,13 @@ router.post('/:id/approve', async (req: Request, res: Response): Promise<any> =>
 
     // Generate facility certificate upon manager sign-off
     await generateFacilityCertificate(auditId);
+
+    broadcastNotification('room:role:OWNER', 'notification:new', {
+      title: '🏆 Facility Audit Approved & Certified',
+      message: `Manager signed off audit for your venue. Fitness score updated!`,
+      type: 'CERTIFICATE',
+      timestamp: new Date().toISOString(),
+    });
 
     const updatedAudit = await prisma.audit.findUnique({
       where: { id: auditId },

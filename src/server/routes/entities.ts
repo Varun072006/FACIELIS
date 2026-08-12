@@ -3,6 +3,7 @@ import prisma from '../../lib/db';
 import { getCrossAuditItemsForAuditor, submitCrossAuditVerification } from '../../engines/cross-audit.engine';
 import { calculateAuditScores } from '../../engines/score.engine';
 import { generateFacilityCertificate } from '../../engines/certificate.engine';
+import { broadcastNotification } from '../socket';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
@@ -402,6 +403,20 @@ router.post('/repairs', async (req: Request, res: Response): Promise<any> => {
       data: { status: 'REPAIRED_PENDING_CROSS' },
     });
 
+    broadcastNotification('room:role:MANAGER', 'notification:new', {
+      title: '🛠️ Technician Solved Defect',
+      message: `Technician submitted repair proof for defect ${defectId.substring(0, 8)}. Ready for review.`,
+      type: 'REPAIR',
+      timestamp: new Date().toISOString(),
+    });
+
+    broadcastNotification('room:role:OWNER', 'notification:new', {
+      title: '🛠️ Component Repaired in Your Venue',
+      message: `Technician completed repair work in your venue. Photo proof available.`,
+      type: 'REPAIR',
+      timestamp: new Date().toISOString(),
+    });
+
     return res.json(repair);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -475,6 +490,7 @@ router.get('/venues', async (_req: Request, res: Response): Promise<any> => {
   try {
     const venues = await prisma.venue.findMany({
       include: {
+        owner: true,
         floor: {
           include: {
             building: true,
@@ -484,6 +500,23 @@ router.get('/venues', async (_req: Request, res: Response): Promise<any> => {
       orderBy: { name: 'asc' },
     });
     return res.json(venues);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/venues/:id', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const id = req.params.id as string;
+    const { ownerId } = req.body || {};
+
+    const venue = await prisma.venue.update({
+      where: { id },
+      data: { ownerId: ownerId || null },
+      include: { owner: true, floor: true },
+    });
+
+    return res.json(venue);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

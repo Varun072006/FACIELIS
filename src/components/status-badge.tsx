@@ -15,9 +15,15 @@ export function StatusBadge({ status }: { status: string }) {
     styles = 'bg-blue-50 text-blue-700 border-blue-200';
   }
 
+  let displayText = status.replace(/_/g, ' ');
+  if (normalized === 'REPAIRED_PENDING_CROSS') {
+    displayText = 'PENDING APPROVAL';
+  }
+
   return (
     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${styles}`}>
-      {status.replace(/_/g, ' ')}
+      {displayText}
     </span>
   );
 }
+
