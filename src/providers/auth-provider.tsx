@@ -37,16 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Read cache on mount
     try {
       const cached = window.sessionStorage.getItem('facielis_cached_user');
       if (cached) {
         setUser(JSON.parse(cached));
         setLoading(false);
       }
-    } catch (e) {
-      // ignore JSON parse error
-    }
+    } catch (e) {}
 
     let active = true;
     async function verifyAuth() {
@@ -63,9 +60,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           if (typeof window !== 'undefined') {
             window.sessionStorage.removeItem('facielis_cached_user');
-          }
-          if (pathname !== '/login') {
-            router.push('/login');
           }
         }
       } catch (err) {

@@ -4,7 +4,7 @@ import React, { useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
-import { ShieldCheck, CheckCircle2, XCircle, ArrowRight, Wrench } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, Wrench } from 'lucide-react';
 
 export default function CrossAuditPage({ params }: { params: Promise<{ auditId: string }> }) {
   const { auditId } = use(params);
@@ -103,7 +103,7 @@ export default function CrossAuditPage({ params }: { params: Promise<{ auditId: 
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-gray-500 uppercase">Original Defect Photo</p>
                     {defect.inspectionItem?.photoUrl ? (
-                      <img src={defect.inspectionItem.photoUrl} className="w-full h-36 object-cover rounded-lg border" />
+                      <img src={defect.inspectionItem.photoUrl} alt="Original Defect" className="w-full h-36 object-cover rounded-lg border" />
                     ) : (
                       <div className="h-36 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-400">No Photo</div>
                     )}
@@ -113,7 +113,7 @@ export default function CrossAuditPage({ params }: { params: Promise<{ auditId: 
                   <div className="space-y-1">
                     <p className="text-[11px] font-bold text-gray-500 uppercase">Technician Repair Proof</p>
                     {defect.repair?.repairProofPhotoUrl ? (
-                      <img src={defect.repair.repairProofPhotoUrl} className="w-full h-36 object-cover rounded-lg border border-emerald-300" />
+                      <img src={defect.repair.repairProofPhotoUrl} alt="Technician Repair Proof" className="w-full h-36 object-cover rounded-lg border border-emerald-300" />
                     ) : (
                       <div className="h-36 bg-emerald-50 rounded-lg flex items-center justify-center text-xs text-emerald-700">Proof Submitted</div>
                     )}

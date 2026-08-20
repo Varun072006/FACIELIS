@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/providers/auth-provider';
 import { ArrowRight, Lock, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const { user, loading, login } = useAuth();
   const router = useRouter();
 
-  const handleLoginWithEmail = async (loginEmail: string) => {
+  const handleLoginWithEmail = useCallback(async (loginEmail: string) => {
     setError('');
     setSubmitting(true);
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [login]);
 
   useEffect(() => {
     if (loading) return;
@@ -71,7 +71,7 @@ export default function LoginPage() {
         handleLoginWithEmail(targetEmail);
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, handleLoginWithEmail]);
 
   const handleFormLogin = async (e: React.FormEvent) => {
     e.preventDefault();

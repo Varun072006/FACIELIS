@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
 import { useAuth } from '@/providers/auth-provider';
-import { Wrench, Clock, MapPin, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Wrench, Clock, MapPin, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TechnicianDashboard() {
@@ -74,7 +74,7 @@ export default function TechnicianDashboard() {
                   <div>
                     <p className="font-bold text-gray-700 text-[11px] uppercase mb-1">Auditor Defect Photo:</p>
                     {defect.inspectionItem?.photoUrl ? (
-                      <img src={defect.inspectionItem.photoUrl} className="w-full h-32 object-cover rounded-lg border" />
+                      <img src={defect.inspectionItem.photoUrl} alt="Auditor Defect Photo" className="w-full h-32 object-cover rounded-lg border" />
                     ) : (
                       <div className="h-32 bg-gray-50 border rounded-lg flex items-center justify-center text-gray-400 text-xs">
                         No photo attached

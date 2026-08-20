@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { PhotoCapture } from '@/components/photo-capture';
 import { useAuth } from '@/providers/auth-provider';
-import { Wrench, ArrowRight, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Wrench, ArrowRight } from 'lucide-react';
 
 export default function RepairSubmissionPage({ params }: { params: Promise<{ defectId: string }> }) {
   const { defectId } = use(params);
@@ -79,7 +79,7 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
         {defect.inspectionItem?.photoUrl && (
           <div>
             <p className="text-xs font-bold text-gray-700 mb-1">Auditor Original Photo Evidence:</p>
-            <img src={defect.inspectionItem.photoUrl} className="w-full h-40 object-cover rounded-lg border" />
+            <img src={defect.inspectionItem.photoUrl} alt="Auditor Original Defect Evidence" className="w-full h-40 object-cover rounded-lg border" />
           </div>
         )}
       </div>
