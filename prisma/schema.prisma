@@ -53,13 +53,27 @@ enum DefectStatus {
 }
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   @unique
-  address   String?
-  campuses  Campus[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String               @id @default(uuid())
+  name                String
+  code                String               @unique
+  address             String?
+  campuses            Campus[]
+  departments         Department[]
+  users               User[]
+  assetCategories     AssetCategory[]
+  rules               Rule[]
+  venues              Venue[]
+  assets              Asset[]
+  audits              Audit[]
+  defects             Defect[]
+  scores              Score[]
+  certificates        Certificate[]
+  ownerQuestionBatches OwnerQuestionBatch[]
+  ownerDefectReports  OwnerDefectReport[]
+  crossAuditQuestions CrossAuditQuestion[]
+  auditLogs           AuditLog[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
 
 model Campus {
@@ -71,6 +85,8 @@ model Campus {
   buildings      Building[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
 }
 
 model Building {
@@ -83,6 +99,8 @@ model Building {
   users     User[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([campusId])
 }
 
 model Floor {
@@ -94,6 +112,8 @@ model Floor {
   venues     Venue[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@index([buildingId])
 }
 
 model Venue {
@@ -103,6 +123,8 @@ model Venue {
   type                String               @default("Cabin/Room")
   floorId             String
   floor               Floor                @relation(fields: [floorId], references: [id], onDelete: Cascade)
+  organizationId      String?
+  organization        Organization?        @relation(fields: [organizationId], references: [id])
   ownerId             String?
   owner               User?                @relation("VenueOwner", fields: [ownerId], references: [id])
   assets              Asset[]
@@ -112,42 +134,58 @@ model Venue {
   certificates        Certificate[]
   ownerQuestionBatches OwnerQuestionBatch[]
   ownerDefectReports   OwnerDefectReport[]
+  deletedAt           DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+
+  @@index([floorId])
+  @@index([organizationId])
+  @@index([ownerId])
+  @@index([deletedAt])
 }
 
 model Department {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  code        String   @unique
-  description String?
-  users       User[]
-  defects     Defect[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String        @id @default(uuid())
+  name           String        @unique
+  code           String        @unique
+  description    String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  users          User[]
+  defects        Defect[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId])
 }
 
 model User {
-  id           String      @id @default(uuid())
-  email        String      @unique
-  passwordHash String
-  name         String
-  role         Role
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
-  buildingId   String?
-  building     Building?   @relation(fields: [buildingId], references: [id])
-  ownedVenues  Venue[]     @relation("VenueOwner")
-  audits       Audit[]     @relation("AuditorAudits")
-  repairs      Repair[]
-  defects      Defect[]    @relation("TechnicianDefects")
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  passwordHash        String
+  name                String
+  role                Role
+  organizationId      String?
+  organization        Organization?        @relation(fields: [organizationId], references: [id])
+  departmentId        String?
+  department          Department?          @relation(fields: [departmentId], references: [id])
+  buildingId          String?
+  building            Building?            @relation(fields: [buildingId], references: [id])
+  ownedVenues         Venue[]              @relation("VenueOwner")
+  audits              Audit[]              @relation("AuditorAudits")
+  repairs             Repair[]
+  defects             Defect[]             @relation("TechnicianDefects")
   ownerResponses      OwnerResponse[]
   ownerDefectReports  OwnerDefectReport[]
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  auditLogs           AuditLog[]
+  deletedAt           DateTime?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@index([role])
+  @@index([organizationId])
   @@index([departmentId])
+  @@index([deletedAt])
 }
 
 model AssetCategory {
@@ -155,10 +193,14 @@ model AssetCategory {
   name            String           @unique
   code            String           @unique
   description     String?
+  organizationId  String?
+  organization    Organization?    @relation(fields: [organizationId], references: [id])
   assets          Asset[]
   referenceImages ReferenceImage[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+
+  @@index([organizationId])
 }
 
 model Asset {
@@ -169,18 +211,23 @@ model Asset {
   assetCategory    AssetCategory     @relation(fields: [assetCategoryId], references: [id])
   venueId          String
   venue            Venue             @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  organizationId   String?
+  organization     Organization?     @relation(fields: [organizationId], references: [id])
   qrCode           String?
   installationDate DateTime?
   status           String            @default("ACTIVE")
   components       Component[]
   inspectionItems  InspectionItem[]
   defects          Defect[]
+  deletedAt        DateTime?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
   @@index([venueId])
+  @@index([organizationId])
   @@index([assetCategoryId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 model Component {
@@ -191,10 +238,12 @@ model Component {
   asset           Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
   inspectionItems InspectionItem[]
   defects         Defect[]
+  deletedAt       DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   @@index([assetId])
+  @@index([deletedAt])
 }
 
 model ReferenceImage {
@@ -207,6 +256,8 @@ model ReferenceImage {
   description        String?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+
+  @@index([assetCategoryId])
 }
 
 model Rule {
@@ -219,8 +270,14 @@ model Rule {
   departmentName String
   slaHours       Int
   autoEscalate   Boolean        @default(true)
+  organizationId String?
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  deletedAt      DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+
+  @@index([organizationId])
+  @@index([deletedAt])
 }
 
 model Audit {
@@ -228,6 +285,8 @@ model Audit {
   auditNo             String               @unique
   venueId             String
   venue               Venue                @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  organizationId      String?
+  organization        Organization?        @relation(fields: [organizationId], references: [id])
   auditorId           String
   auditor             User                 @relation("AuditorAudits", fields: [auditorId], references: [id])
   managerId           String?
@@ -238,33 +297,39 @@ model Audit {
   completedDate       DateTime?
   missedReason        String?
   missedAt            DateTime?
+  gpsLat              Float?
+  gpsLng              Float?
+  deviceInfo          String?
   inspectionItems     InspectionItem[]
   crossAuditResponses CrossAuditResponse[]
   score               Score?
-  certificate         Certificate?
+  certificate         Certificate[]
+  deletedAt           DateTime?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
   @@index([auditorId])
   @@index([venueId])
+  @@index([organizationId])
   @@index([status])
+  @@index([deletedAt])
 }
 
 model InspectionItem {
-  id         String   @id @default(uuid())
-  auditId    String
-  audit      Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
-  assetId    String
-  asset      Asset    @relation(fields: [assetId], references: [id])
+  id          String    @id @default(uuid())
+  auditId     String
+  audit       Audit     @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  assetId     String
+  asset       Asset     @relation(fields: [assetId], references: [id])
   componentId String
-  component  Component @relation(fields: [componentId], references: [id])
-  status     String   // PASS or FAIL
-  photoUrl   String?
-  geotagLat  Float?
-  geotagLng  Float?
-  remark     String?
-  timestamp  DateTime @default(now())
-  defect     Defect?
+  component   Component @relation(fields: [componentId], references: [id])
+  status      String    // PASS or FAIL
+  photoUrl    String?
+  geotagLat   Float?
+  geotagLng   Float?
+  remark      String?
+  timestamp   DateTime  @default(now())
+  defect      Defect?
 
   @@index([auditId])
   @@index([assetId])
@@ -281,6 +346,8 @@ model Defect {
   asset            Asset          @relation(fields: [assetId], references: [id])
   componentId      String
   component        Component      @relation(fields: [componentId], references: [id])
+  organizationId   String?
+  organization     Organization?  @relation(fields: [organizationId], references: [id])
   category         String
   priority         DefectPriority
   severity         DefectSeverity
@@ -291,15 +358,22 @@ model Defect {
   status           DefectStatus   @default(OPEN)
   slaDeadline      DateTime
   isOverdue        Boolean        @default(false)
+  laborHours       Float?
+  repairCost       Float?
+  assignedAt       DateTime?
+  reopenedReason   String?
   repair           Repair?
+  deletedAt        DateTime?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
   @@index([technicianId])
   @@index([departmentId])
+  @@index([organizationId])
   @@index([status])
   @@index([isOverdue])
   @@index([assetId])
+  @@index([deletedAt])
 }
 
 model Repair {
@@ -312,26 +386,33 @@ model Repair {
   geotagLat           Float?
   geotagLng           Float?
   remark              String
+  laborHours          Float?
+  sparePartsUsed      String?
   completedAt         DateTime @default(now())
 
   @@index([technicianId])
 }
 
 model CrossAuditQuestion {
-  id            String   @id @default(uuid())
-  venueId       String
-  venue         Venue    @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  question      String
-  assetType     String
-  expectedCount Int?
-  optionA       String
-  optionB       String
-  optionC       String
-  optionD       String
-  correctAnswer String   // "A", "B", "C", "D"
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  responses     CrossAuditResponse[]
+  id             String               @id @default(uuid())
+  venueId        String
+  venue          Venue                @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization?        @relation(fields: [organizationId], references: [id])
+  question       String
+  assetType      String
+  expectedCount  Int?
+  optionA        String
+  optionB        String
+  optionC        String
+  optionD        String
+  correctAnswer  String // "A", "B", "C", "D"
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  responses      CrossAuditResponse[]
+
+  @@index([venueId])
+  @@index([organizationId])
 }
 
 model CrossAuditResponse {
@@ -343,14 +424,19 @@ model CrossAuditResponse {
   auditorResponse String
   isCorrect       Boolean
   createdAt       DateTime           @default(now())
+
+  @@index([auditId])
+  @@index([questionId])
 }
 
 model Score {
-  id                    String   @id @default(uuid())
-  auditId               String   @unique
-  audit                 Audit    @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  id                    String        @id @default(uuid())
+  auditId               String        @unique
+  audit                 Audit         @relation(fields: [auditId], references: [id], onDelete: Cascade)
   venueId               String
-  venue                 Venue    @relation(fields: [venueId], references: [id])
+  venue                 Venue         @relation(fields: [venueId], references: [id])
+  organizationId        String?
+  organization          Organization? @relation(fields: [organizationId], references: [id])
   housekeepingScore     Float
   electricalScore       Float
   plumbingScore         Float
@@ -359,43 +445,53 @@ model Score {
   overallScore          Float
   criticalFailuresCount Int
   isFit                 Boolean
-  createdAt             DateTime @default(now())
+  createdAt             DateTime      @default(now())
 
   @@index([venueId])
+  @@index([organizationId])
 }
 
 model Certificate {
-  id                 String        @id @default(uuid())
-  certificateNo      String        @unique
-  venueId            String
-  venue              Venue         @relation(fields: [venueId], references: [id])
-  auditId            String        @unique
-  audit              Audit         @relation(fields: [auditId], references: [id])
-  fitnessStatus      FitnessStatus
-  overallScore       Float
-  validFrom          DateTime      @default(now())
-  validUntil         DateTime
-  qrCode             String?
+  id                  String        @id @default(uuid())
+  certificateNo       String        @unique
+  venueId             String
+  venue               Venue         @relation(fields: [venueId], references: [id])
+  auditId             String
+  audit               Audit         @relation(fields: [auditId], references: [id])
+  organizationId      String?
+  organization        Organization? @relation(fields: [organizationId], references: [id])
+  fitnessStatus       FitnessStatus
+  overallScore        Float
+  validFrom           DateTime      @default(now())
+  validUntil          DateTime
+  qrCode              String?
   approvedByManagerId String?
-  createdAt          DateTime      @default(now())
+  deletedAt           DateTime?
+  createdAt           DateTime      @default(now())
 
   @@index([venueId])
+  @@index([auditId])
+  @@index([organizationId])
   @@index([fitnessStatus])
+  @@index([deletedAt])
 }
 
 model OwnerQuestionBatch {
-  id        String          @id @default(uuid())
-  venueId   String
-  venue     Venue           @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  managerId String?
-  status    String          @default("ACTIVE") // ACTIVE, EXPIRED, AUTO_SUBMITTED, COMPLETED
-  expiresAt DateTime
-  questions OwnerQuestion[]
-  responses OwnerResponse[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id             String          @id @default(uuid())
+  venueId        String
+  venue          Venue           @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization?   @relation(fields: [organizationId], references: [id])
+  managerId      String?
+  status         String          @default("ACTIVE") // ACTIVE, EXPIRED, AUTO_SUBMITTED, COMPLETED
+  expiresAt      DateTime
+  questions      OwnerQuestion[]
+  responses      OwnerResponse[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   @@index([venueId])
+  @@index([organizationId])
   @@index([status])
 }
 
@@ -407,6 +503,8 @@ model OwnerQuestion {
   category  String             @default("General")
   responses OwnerResponse[]
   createdAt DateTime           @default(now())
+
+  @@index([batchId])
 }
 
 model OwnerResponse {
@@ -417,7 +515,7 @@ model OwnerResponse {
   question   OwnerQuestion      @relation(fields: [questionId], references: [id], onDelete: Cascade)
   ownerId    String
   owner      User               @relation(fields: [ownerId], references: [id])
-  answer     String             // YES, NO, PARTIAL
+  answer     String // YES, NO, PARTIAL
   remark     String?
   answeredAt DateTime           @default(now())
 
@@ -426,24 +524,47 @@ model OwnerResponse {
 }
 
 model OwnerDefectReport {
-  id          String         @id @default(uuid())
-  defectNo    String         @unique
-  venueId     String
-  venue       Venue          @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  ownerId     String
-  owner       User           @relation(fields: [ownerId], references: [id])
-  title       String
-  description String
-  assetName   String?
-  priority    DefectPriority @default(P3)
-  severity    DefectSeverity @default(MEDIUM)
-  status      DefectStatus   @default(OPEN)
-  photoUrl    String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id             String         @id @default(uuid())
+  defectNo       String         @unique
+  venueId        String
+  venue          Venue          @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  organizationId String?
+  organization   Organization?  @relation(fields: [organizationId], references: [id])
+  ownerId        String
+  owner          User           @relation(fields: [ownerId], references: [id])
+  title          String
+  description    String
+  assetName      String?
+  priority       DefectPriority @default(P3)
+  severity       DefectSeverity @default(MEDIUM)
+  status         DefectStatus   @default(OPEN)
+  photoUrl       String?
+  deletedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([venueId])
+  @@index([organizationId])
   @@index([ownerId])
   @@index([status])
+  @@index([deletedAt])
 }
 
+model AuditLog {
+  id             String        @id @default(uuid())
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  action         String // e.g. AUDIT_APPROVED, DEFECT_ASSIGNED, REPAIR_SUBMITTED, RULE_CREATED
+  entityType     String // e.g. Audit, Defect, Repair, Certificate
+  entityId       String
+  detailsJson    String? // JSON payload of change
+  ipAddress      String?
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

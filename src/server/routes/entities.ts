@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import prisma from '../../lib/db';
 import { getCrossAuditItemsForAuditor, submitCrossAuditVerification } from '../../engines/cross-audit.engine';
 import { calculateAuditScores } from '../../engines/score.engine';
@@ -6,14 +6,39 @@ import { generateFacilityCertificate } from '../../engines/certificate.engine';
 import { broadcastNotification } from '../socket';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { authenticate, requireRoles, logAuditEvent, AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// Apply authentication to all entity routes
+router.use(authenticate);
+
+// ================= AUDIT LOGS (Enterprise Audit Trail) =================
+router.get('/audit-logs', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
+  try {
+    const organizationId = req.user?.organizationId;
+    const where: any = {};
+    if (organizationId) where.organizationId = organizationId;
+
+    const logs = await prisma.auditLog.findMany({
+      where,
+      include: { user: { select: { id: true, name: true, email: true, role: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    return res.json(logs);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
 // ================= USERS =================
-router.get('/users', async (req: Request, res: Response): Promise<any> => {
+router.get('/users', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const role = req.query.role as string | undefined;
-    const where: any = {};
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
     if (role) where.role = role;
 
     const users = await prisma.user.findMany({
@@ -28,10 +53,12 @@ router.get('/users', async (req: Request, res: Response): Promise<any> => {
 });
 
 // ================= ASSETS =================
-router.get('/assets', async (req: Request, res: Response): Promise<any> => {
+router.get('/assets', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
-    const where: any = {};
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
     if (venueId) where.venueId = venueId;
 
     const assets = await prisma.asset.findMany({
@@ -39,7 +66,7 @@ router.get('/assets', async (req: Request, res: Response): Promise<any> => {
       include: {
         assetCategory: { include: { referenceImages: true } },
         venue: { include: { floor: { include: { building: true } } } },
-        components: true,
+        components: { where: { deletedAt: null } },
         defects: { include: { department: true, repair: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -50,9 +77,11 @@ router.get('/assets', async (req: Request, res: Response): Promise<any> => {
   }
 });
 
-router.post('/assets', async (req: Request, res: Response): Promise<any> => {
+router.post('/assets', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const { name, serialNo, categoryCode, venueId, componentNames, imageUrl } = req.body || {};
+    const organizationId = req.user?.organizationId;
+
     if (!name || !categoryCode) {
       return res.status(400).json({ error: 'Name and Category are required' });
     }
@@ -67,13 +96,16 @@ router.post('/assets', async (req: Request, res: Response): Promise<any> => {
           name,
           code: categoryCode.toUpperCase(),
           description: `Custom ${name} category`,
+          organizationId: organizationId || null,
         },
       });
     }
 
     let targetVenueId = venueId;
     if (!targetVenueId) {
-      const defaultVenue = await prisma.venue.findFirst();
+      const defaultVenue = await prisma.venue.findFirst({
+        where: organizationId ? { organizationId } : {},
+      });
       targetVenueId = defaultVenue?.id;
     }
 
@@ -86,6 +118,7 @@ router.post('/assets', async (req: Request, res: Response): Promise<any> => {
         serialNo: autoSerial,
         assetCategoryId: category.id,
         venueId: targetVenueId!,
+        organizationId: organizationId || null,
         installationDate: new Date(),
         status: 'ACTIVE',
       },
@@ -121,6 +154,16 @@ router.post('/assets', async (req: Request, res: Response): Promise<any> => {
       });
     }
 
+    await logAuditEvent({
+      organizationId,
+      userId: req.user?.userId,
+      action: 'ASSET_CREATED',
+      entityType: 'Asset',
+      entityId: newAsset.id,
+      details: { name: newAsset.name, serialNo: newAsset.serialNo, venueId: targetVenueId },
+      req,
+    });
+
     const createdAsset = await prisma.asset.findUnique({
       where: { id: newAsset.id },
       include: {
@@ -137,10 +180,12 @@ router.post('/assets', async (req: Request, res: Response): Promise<any> => {
 });
 
 // ================= CERTIFICATES =================
-router.get('/certificates', async (req: Request, res: Response): Promise<any> => {
+router.get('/certificates', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
-    const where: any = {};
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
     if (venueId) where.venueId = venueId;
 
     const certs = await prisma.certificate.findMany({
@@ -158,7 +203,7 @@ router.get('/certificates', async (req: Request, res: Response): Promise<any> =>
 });
 
 // ================= CROSS-AUDIT =================
-router.get('/cross-audit', async (req: Request, res: Response): Promise<any> => {
+router.get('/cross-audit', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
     if (!venueId) return res.status(400).json({ error: 'venueId parameter required' });
@@ -170,7 +215,7 @@ router.get('/cross-audit', async (req: Request, res: Response): Promise<any> => 
   }
 });
 
-router.post('/cross-audit', async (req: Request, res: Response): Promise<any> => {
+router.post('/cross-audit', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const { auditId, defectId, verified, auditorRemark, responses } = req.body || {};
 
@@ -203,7 +248,17 @@ router.post('/cross-audit', async (req: Request, res: Response): Promise<any> =>
       });
 
       await calculateAuditScores(auditId);
-      await generateFacilityCertificate(auditId);
+      await generateFacilityCertificate(auditId, req.user?.userId);
+
+      await logAuditEvent({
+        organizationId: req.user?.organizationId,
+        userId: req.user?.userId,
+        action: 'CROSS_AUDIT_COMPLETED',
+        entityType: 'Audit',
+        entityId: auditId,
+        details: { responseCount: responses.length },
+        req,
+      });
     }
 
     return res.json({ success: true });
@@ -213,10 +268,12 @@ router.post('/cross-audit', async (req: Request, res: Response): Promise<any> =>
 });
 
 // ================= CROSS-AUDIT QUESTIONS =================
-router.get('/cross-audit-questions', async (req: Request, res: Response): Promise<any> => {
+router.get('/cross-audit-questions', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
+    const organizationId = req.user?.organizationId;
     const where: any = {};
+    if (organizationId) where.organizationId = organizationId;
     if (venueId) where.venueId = venueId;
 
     const questions = await prisma.crossAuditQuestion.findMany({
@@ -230,9 +287,10 @@ router.get('/cross-audit-questions', async (req: Request, res: Response): Promis
   }
 });
 
-router.post('/cross-audit-questions', async (req: Request, res: Response): Promise<any> => {
+router.post('/cross-audit-questions', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const body = req.body;
+    const organizationId = req.user?.organizationId;
 
     if (Array.isArray(body)) {
       const created = [];
@@ -243,6 +301,7 @@ router.post('/cross-audit-questions', async (req: Request, res: Response): Promi
         const newQuestion = await prisma.crossAuditQuestion.create({
           data: {
             venueId: item.venueId,
+            organizationId: organizationId || null,
             question: item.question,
             assetType: item.assetType || 'GENERAL',
             expectedCount: item.expectedCount !== undefined ? parseInt(String(item.expectedCount), 10) : null,
@@ -266,6 +325,7 @@ router.post('/cross-audit-questions', async (req: Request, res: Response): Promi
     const newQuestion = await prisma.crossAuditQuestion.create({
       data: {
         venueId,
+        organizationId: organizationId || null,
         question,
         assetType: assetType || 'GENERAL',
         expectedCount: expectedCount !== undefined ? parseInt(String(expectedCount), 10) : null,
@@ -283,7 +343,7 @@ router.post('/cross-audit-questions', async (req: Request, res: Response): Promi
   }
 });
 
-router.patch('/cross-audit-questions/:id', async (req: Request, res: Response): Promise<any> => {
+router.patch('/cross-audit-questions/:id', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
     const body = req.body || {};
@@ -313,7 +373,7 @@ router.patch('/cross-audit-questions/:id', async (req: Request, res: Response): 
   }
 });
 
-router.delete('/cross-audit-questions/:id', async (req: Request, res: Response): Promise<any> => {
+router.delete('/cross-audit-questions/:id', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
     await prisma.crossAuditQuestion.delete({ where: { id } });
@@ -324,9 +384,14 @@ router.delete('/cross-audit-questions/:id', async (req: Request, res: Response):
 });
 
 // ================= DEPARTMENTS =================
-router.get('/departments', async (_req: Request, res: Response): Promise<any> => {
+router.get('/departments', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
+    const organizationId = req.user?.organizationId;
+    const where: any = {};
+    if (organizationId) where.organizationId = organizationId;
+
     const departments = await prisma.department.findMany({
+      where,
       include: { _count: { select: { users: true, defects: true } } },
       orderBy: { name: 'asc' },
     });
@@ -337,9 +402,14 @@ router.get('/departments', async (_req: Request, res: Response): Promise<any> =>
 });
 
 // ================= FACILITIES =================
-router.get('/facilities', async (_req: Request, res: Response): Promise<any> => {
+router.get('/facilities', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
+    const organizationId = req.user?.organizationId;
+    const where: any = {};
+    if (organizationId) where.id = organizationId;
+
     const orgs = await prisma.organization.findMany({
+      where,
       include: {
         campuses: {
           include: {
@@ -348,6 +418,7 @@ router.get('/facilities', async (_req: Request, res: Response): Promise<any> => 
                 floors: {
                   include: {
                     venues: {
+                      where: { deletedAt: null },
                       include: {
                         _count: { select: { assets: true, audits: true } },
                       },
@@ -368,11 +439,12 @@ router.get('/facilities', async (_req: Request, res: Response): Promise<any> => 
 });
 
 // ================= REPAIRS =================
-router.post('/repairs', async (req: Request, res: Response): Promise<any> => {
+router.post('/repairs', requireRoles('SUPER_ADMIN', 'MANAGER', 'TECHNICIAN'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    const { defectId, technicianId, repairProofPhotoUrl, geotagLat, geotagLng, remark } = req.body || {};
+    const { defectId, technicianId, repairProofPhotoUrl, geotagLat, geotagLng, remark, laborHours, sparePartsUsed } = req.body || {};
+    const effectiveTechId = technicianId || req.user?.userId;
 
-    if (!defectId || !technicianId || !repairProofPhotoUrl || !remark) {
+    if (!defectId || !effectiveTechId || !repairProofPhotoUrl || !remark) {
       return res.status(400).json({
         error: 'Defect ID, Technician ID, proof photo, and remark are required',
       });
@@ -381,26 +453,40 @@ router.post('/repairs', async (req: Request, res: Response): Promise<any> => {
     const repair = await prisma.repair.upsert({
       where: { defectId },
       update: {
-        technicianId,
+        technicianId: effectiveTechId,
         repairProofPhotoUrl,
         geotagLat: geotagLat || null,
         geotagLng: geotagLng || null,
         remark,
+        laborHours: laborHours ? parseFloat(laborHours) : null,
+        sparePartsUsed: sparePartsUsed || null,
         completedAt: new Date(),
       },
       create: {
         defectId,
-        technicianId,
+        technicianId: effectiveTechId,
         repairProofPhotoUrl,
         geotagLat: geotagLat || null,
         geotagLng: geotagLng || null,
         remark,
+        laborHours: laborHours ? parseFloat(laborHours) : null,
+        sparePartsUsed: sparePartsUsed || null,
       },
     });
 
     await prisma.defect.update({
       where: { id: defectId },
       data: { status: 'REPAIRED_PENDING_CROSS' },
+    });
+
+    await logAuditEvent({
+      organizationId: req.user?.organizationId,
+      userId: effectiveTechId,
+      action: 'REPAIR_SUBMITTED',
+      entityType: 'Repair',
+      entityId: repair.id,
+      details: { defectId, remark, laborHours, sparePartsUsed },
+      req,
     });
 
     broadcastNotification('room:role:MANAGER', 'notification:new', {
@@ -424,9 +510,14 @@ router.post('/repairs', async (req: Request, res: Response): Promise<any> => {
 });
 
 // ================= RULES =================
-router.get('/rules', async (_req: Request, res: Response): Promise<any> => {
+router.get('/rules', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
+
     const rules = await prisma.rule.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
     });
     return res.json(rules);
@@ -435,9 +526,26 @@ router.get('/rules', async (_req: Request, res: Response): Promise<any> => {
   }
 });
 
-router.post('/rules', async (req: Request, res: Response): Promise<any> => {
+router.post('/rules', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    const rule = await prisma.rule.create({ data: req.body });
+    const organizationId = req.user?.organizationId;
+    const rule = await prisma.rule.create({
+      data: {
+        ...req.body,
+        organizationId: organizationId || null,
+      },
+    });
+
+    await logAuditEvent({
+      organizationId,
+      userId: req.user?.userId,
+      action: 'RULE_CREATED',
+      entityType: 'Rule',
+      entityId: rule.id,
+      details: { componentType: rule.componentType, priority: rule.priority, slaHours: rule.slaHours },
+      req,
+    });
+
     return res.json(rule);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
@@ -445,10 +553,12 @@ router.post('/rules', async (req: Request, res: Response): Promise<any> => {
 });
 
 // ================= SCORES =================
-router.get('/scores', async (req: Request, res: Response): Promise<any> => {
+router.get('/scores', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
+    const organizationId = req.user?.organizationId;
     const where: any = {};
+    if (organizationId) where.organizationId = organizationId;
     if (venueId) where.venueId = venueId;
 
     const scores = await prisma.score.findMany({
@@ -466,7 +576,7 @@ router.get('/scores', async (req: Request, res: Response): Promise<any> => {
 });
 
 // ================= UPLOAD =================
-router.post('/upload', async (req: Request, res: Response): Promise<any> => {
+router.post('/upload', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const { image, type = 'defects' } = req.body || {};
     if (image) {
@@ -486,9 +596,14 @@ router.post('/upload', async (req: Request, res: Response): Promise<any> => {
 });
 
 // ================= VENUES =================
-router.get('/venues', async (_req: Request, res: Response): Promise<any> => {
+router.get('/venues', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
+
     const venues = await prisma.venue.findMany({
+      where,
       include: {
         owner: true,
         floor: {
@@ -505,7 +620,7 @@ router.get('/venues', async (_req: Request, res: Response): Promise<any> => {
   }
 });
 
-router.patch('/venues/:id', async (req: Request, res: Response): Promise<any> => {
+router.patch('/venues/:id', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const id = req.params.id as string;
     const { ownerId } = req.body || {};
@@ -514,6 +629,16 @@ router.patch('/venues/:id', async (req: Request, res: Response): Promise<any> =>
       where: { id },
       data: { ownerId: ownerId || null },
       include: { owner: true, floor: true },
+    });
+
+    await logAuditEvent({
+      organizationId: req.user?.organizationId,
+      userId: req.user?.userId,
+      action: 'VENUE_OWNER_ASSIGNED',
+      entityType: 'Venue',
+      entityId: id,
+      details: { venueCode: venue.code, ownerId },
+      req,
     });
 
     return res.json(venue);

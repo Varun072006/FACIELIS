@@ -4,10 +4,11 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Seeding FACIELIS database with complete reference images for BIT-Sathy pilot venue...');
+  console.log('Seeding FACIELIS enterprise database with multi-tenancy for BIT-Sathy pilot venue...');
 
   // Clean existing transactional & asset data to allow repeated seed runs
   console.log('Clearing old data for clean re-seed...');
+  await prisma.auditLog.deleteMany();
   await prisma.ownerDefectReport.deleteMany();
   await prisma.ownerResponse.deleteMany();
   await prisma.ownerQuestion.deleteMany();
@@ -68,11 +69,11 @@ async function main() {
 
   // 2. Departments
   const deptData = [
-    { name: 'Housekeeping', code: 'HK', description: 'Cleaning & sanitation' },
-    { name: 'Electrical', code: 'ELEC', description: 'Wiring, switches, fans, lights, panel' },
-    { name: 'Plumbing', code: 'PLUMB', description: 'Water, drainage, piping' },
-    { name: 'Network', code: 'NET', description: 'Routers, Ethernet, Wi-Fi' },
-    { name: 'Documentation', code: 'DOC', description: 'Reports, records, signage' },
+    { name: 'Housekeeping', code: 'HK', description: 'Cleaning & sanitation', organizationId: org.id },
+    { name: 'Electrical', code: 'ELEC', description: 'Wiring, switches, fans, lights, panel', organizationId: org.id },
+    { name: 'Plumbing', code: 'PLUMB', description: 'Water, drainage, piping', organizationId: org.id },
+    { name: 'Network', code: 'NET', description: 'Routers, Ethernet, Wi-Fi', organizationId: org.id },
+    { name: 'Documentation', code: 'DOC', description: 'Reports, records, signage', organizationId: org.id },
   ];
 
   const departments: Record<string, any> = {};
@@ -102,6 +103,7 @@ async function main() {
         name: u.name,
         passwordHash,
         role: u.role,
+        organizationId: org.id,
         departmentId: departments[u.dept].id,
         buildingId: building.id,
       },
@@ -110,6 +112,7 @@ async function main() {
   }
 
   const ownerUser = createdUserMap['owner@facielis.com'];
+  const adminUser = createdUserMap['admin@facielis.com'];
 
   const venue = await prisma.venue.create({
     data: {
@@ -117,6 +120,7 @@ async function main() {
       code: 'LC-4F-RC',
       type: 'Laboratory / Cabin',
       floorId: floor.id,
+      organizationId: org.id,
       ownerId: ownerUser?.id || null,
     },
   });
@@ -252,6 +256,7 @@ async function main() {
         name: c.name,
         code: c.code,
         description: c.description,
+        organizationId: org.id,
       },
     });
     categories[c.code] = category;
@@ -289,6 +294,7 @@ async function main() {
           name,
           assetCategoryId: cat.id,
           venueId: venue.id,
+          organizationId: org.id,
           installationDate: new Date('2024-01-15'),
         },
       });
@@ -446,6 +452,7 @@ async function main() {
     severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     departmentName: string;
     slaHours: number;
+    organizationId: string;
   }> = [
     {
       componentType: 'Internal Wiring',
@@ -455,6 +462,7 @@ async function main() {
       severity: 'CRITICAL',
       departmentName: 'Electrical',
       slaHours: 1,
+      organizationId: org.id,
     },
     {
       componentType: 'MCB Circuit Breakers',
@@ -464,6 +472,7 @@ async function main() {
       severity: 'CRITICAL',
       departmentName: 'Electrical',
       slaHours: 2,
+      organizationId: org.id,
     },
     {
       componentType: 'Electrical Socket Ports',
@@ -473,6 +482,7 @@ async function main() {
       severity: 'HIGH',
       departmentName: 'Electrical',
       slaHours: 4,
+      organizationId: org.id,
     },
     {
       componentType: 'Display Monitor Screen',
@@ -482,6 +492,7 @@ async function main() {
       severity: 'MEDIUM',
       departmentName: 'Network',
       slaHours: 8,
+      organizationId: org.id,
     },
     {
       componentType: 'Cat6 Ethernet Cable',
@@ -491,6 +502,7 @@ async function main() {
       severity: 'HIGH',
       departmentName: 'Network',
       slaHours: 4,
+      organizationId: org.id,
     },
     {
       componentType: 'Condensate Water Drain Pipe',
@@ -500,6 +512,7 @@ async function main() {
       severity: 'HIGH',
       departmentName: 'Plumbing',
       slaHours: 4,
+      organizationId: org.id,
     },
     {
       componentType: 'Tiled Floor Surface',
@@ -509,6 +522,7 @@ async function main() {
       severity: 'LOW',
       departmentName: 'Housekeeping',
       slaHours: 12,
+      organizationId: org.id,
     },
   ];
 
@@ -521,6 +535,7 @@ async function main() {
   const crossAuditQuestions = [
     {
       venueId: venue.id,
+      organizationId: org.id,
       question: 'How many 4-seater electrical tables are located in the Right Cabin?',
       assetType: 'Table',
       expectedCount: 10,
@@ -532,6 +547,7 @@ async function main() {
     },
     {
       venueId: venue.id,
+      organizationId: org.id,
       question: 'How many total ceiling fans are installed in this cabin?',
       assetType: 'Ceiling Fan',
       expectedCount: 6,
@@ -543,6 +559,7 @@ async function main() {
     },
     {
       venueId: venue.id,
+      organizationId: org.id,
       question: 'Where is the network laser printer situated in the Right Cabin?',
       assetType: 'Printer',
       expectedCount: 1,
@@ -567,6 +584,7 @@ async function main() {
   const ownerBatch = await prisma.ownerQuestionBatch.create({
     data: {
       venueId: venue.id,
+      organizationId: org.id,
       managerId: managerUser?.id || null,
       status: 'ACTIVE',
       expiresAt,
@@ -615,6 +633,19 @@ async function main() {
       },
     });
   }
+
+  // 9. Initial Enterprise Audit Log
+  await prisma.auditLog.create({
+    data: {
+      organizationId: org.id,
+      userId: adminUser?.id || null,
+      action: 'SYSTEM_INITIALIZED',
+      entityType: 'Organization',
+      entityId: org.id,
+      detailsJson: JSON.stringify({ message: 'BIT-Sathy enterprise organization created with 143 assets and 666 components.' }),
+      ipAddress: '127.0.0.1',
+    },
+  });
 
   console.log('Seeding completed successfully!');
 }

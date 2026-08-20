@@ -1,8 +1,12 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import prisma from '../../lib/db';
 import { broadcastNotification } from '../socket';
+import { authenticate, requireRoles, logAuditEvent, AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const router = Router();
+
+// Apply authentication to all owner routes
+router.use(authenticate);
 
 const DEFAULT_OWNER_QUESTIONS = [
   { question: 'Are all main entry door locks, handles, and hinges operating smoothly without sticking?', category: 'Doors & Security' },
@@ -37,13 +41,14 @@ const DEFAULT_OWNER_QUESTIONS = [
   { question: 'Are facility emergency exit signage and cabin safety instructions clearly visible?', category: 'Safety & Compliance' },
 ];
 
-async function createDynamicBatch(venueId: string, managerId?: string | null) {
+async function createDynamicBatch(venueId: string, organizationId?: string | null, managerId?: string | null) {
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 15);
 
   const newBatch = await prisma.ownerQuestionBatch.create({
     data: {
       venueId,
+      organizationId: organizationId || null,
       managerId: managerId || null,
       status: 'ACTIVE',
       expiresAt,
@@ -71,15 +76,19 @@ async function createDynamicBatch(venueId: string, managerId?: string | null) {
 }
 
 // GET /api/owner/batch
-router.get('/batch', async (req: Request, res: Response): Promise<any> => {
+router.get('/batch', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
+    const organizationId = req.user?.organizationId;
     let venue = null;
 
     if (venueId) {
       venue = await prisma.venue.findUnique({ where: { id: venueId } });
     } else {
-      venue = await prisma.venue.findFirst({ include: { owner: true } });
+      venue = await prisma.venue.findFirst({
+        where: organizationId ? { organizationId } : {},
+        include: { owner: true },
+      });
     }
 
     if (!venue) {
@@ -106,12 +115,12 @@ router.get('/batch', async (req: Request, res: Response): Promise<any> => {
         data: { status: 'AUTO_SUBMITTED' },
       });
 
-      batch = await createDynamicBatch(venue.id, batch.managerId);
+      batch = await createDynamicBatch(venue.id, organizationId || venue.organizationId, batch.managerId);
     }
 
     // If no active batch exists at all, create one dynamically
     if (!batch) {
-      batch = await createDynamicBatch(venue.id);
+      batch = await createDynamicBatch(venue.id, organizationId || venue.organizationId);
     }
 
     return res.json(batch);
@@ -121,9 +130,11 @@ router.get('/batch', async (req: Request, res: Response): Promise<any> => {
 });
 
 // POST /api/owner/batch
-router.post('/batch', async (req: Request, res: Response): Promise<any> => {
+router.post('/batch', requireRoles('SUPER_ADMIN', 'MANAGER'), async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const { venueId, managerId, questions } = req.body || {};
+    const organizationId = req.user?.organizationId;
+
     if (!venueId) {
       return res.status(400).json({ error: 'venueId is required' });
     }
@@ -140,7 +151,8 @@ router.post('/batch', async (req: Request, res: Response): Promise<any> => {
     const batch = await prisma.ownerQuestionBatch.create({
       data: {
         venueId,
-        managerId: managerId || null,
+        organizationId: organizationId || null,
+        managerId: managerId || req.user?.userId || null,
         status: 'ACTIVE',
         expiresAt,
       },
@@ -162,6 +174,16 @@ router.post('/batch', async (req: Request, res: Response): Promise<any> => {
       });
     }
 
+    await logAuditEvent({
+      organizationId,
+      userId: req.user?.userId,
+      action: 'OWNER_BATCH_DISPATCHED',
+      entityType: 'OwnerQuestionBatch',
+      entityId: batch.id,
+      details: { venueId, questionCount: questionsList.length },
+      req,
+    });
+
     const createdBatch = await prisma.ownerQuestionBatch.findUnique({
       where: { id: batch.id },
       include: {
@@ -178,10 +200,11 @@ router.post('/batch', async (req: Request, res: Response): Promise<any> => {
 });
 
 // POST /api/owner/batch/:batchId/respond
-router.post('/batch/:batchId/respond', async (req: Request, res: Response): Promise<any> => {
+router.post('/batch/:batchId/respond', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const batchId = req.params.batchId as string;
     const { ownerId, responses, isFinal } = req.body || {};
+    const effectiveOwnerId = ownerId || req.user?.userId || 'system-owner';
 
     if (!Array.isArray(responses)) {
       return res.status(400).json({ error: 'responses array is required' });
@@ -211,7 +234,7 @@ router.post('/batch/:batchId/respond', async (req: Request, res: Response): Prom
           data: {
             batchId,
             questionId,
-            ownerId: ownerId || 'system-owner',
+            ownerId: effectiveOwnerId,
             answer,
             remark: remark || null,
           },
@@ -225,6 +248,16 @@ router.post('/batch/:batchId/respond', async (req: Request, res: Response): Prom
         where: { id: batchId },
         data: { status: 'COMPLETED' },
       });
+
+      await logAuditEvent({
+        organizationId: req.user?.organizationId,
+        userId: req.user?.userId,
+        action: 'OWNER_BATCH_COMPLETED',
+        entityType: 'OwnerQuestionBatch',
+        entityId: batchId,
+        details: { responseCount: saved.length },
+        req,
+      });
     }
 
     return res.json({ success: true, count: saved.length });
@@ -234,10 +267,12 @@ router.post('/batch/:batchId/respond', async (req: Request, res: Response): Prom
 });
 
 // GET /api/owner/defects
-router.get('/defects', async (req: Request, res: Response): Promise<any> => {
+router.get('/defects', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
-    const where: any = {};
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
     if (venueId) where.venueId = venueId;
 
     const defects = await prisma.ownerDefectReport.findMany({
@@ -253,11 +288,13 @@ router.get('/defects', async (req: Request, res: Response): Promise<any> => {
 });
 
 // POST /api/owner/defects
-router.post('/defects', async (req: Request, res: Response): Promise<any> => {
+router.post('/defects', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const { venueId, ownerId, title, description, assetName, priority, severity, photoUrl } = req.body || {};
+    const organizationId = req.user?.organizationId;
+    const effectiveOwnerId = ownerId || req.user?.userId;
 
-    if (!title || !description || !venueId || !ownerId) {
+    if (!title || !description || !venueId || !effectiveOwnerId) {
       return res.status(400).json({ error: 'Title, description, venueId, and ownerId are required' });
     }
 
@@ -268,7 +305,8 @@ router.post('/defects', async (req: Request, res: Response): Promise<any> => {
       data: {
         defectNo,
         venueId,
-        ownerId,
+        organizationId: organizationId || null,
+        ownerId: effectiveOwnerId,
         title,
         description,
         assetName: assetName || 'General Venue Asset',
@@ -280,9 +318,19 @@ router.post('/defects', async (req: Request, res: Response): Promise<any> => {
       include: { venue: true, owner: true },
     });
 
+    await logAuditEvent({
+      organizationId,
+      userId: effectiveOwnerId,
+      action: 'OWNER_DEFECT_REPORTED',
+      entityType: 'OwnerDefectReport',
+      entityId: report.id,
+      details: { defectNo: report.defectNo, title: report.title, venueId: report.venueId },
+      req,
+    });
+
     broadcastNotification('room:role:MANAGER', 'notification:new', {
       title: '🏢 Owner Reported Venue Defect',
-      message: `${report.owner?.name} reported issue "${title}" in ${report.venue?.name}.`,
+      message: `${report.owner?.name || 'Owner'} reported issue "${title}" in ${report.venue?.name}.`,
       type: 'OWNER_DEFECT',
       timestamp: new Date().toISOString(),
     });
@@ -294,10 +342,12 @@ router.post('/defects', async (req: Request, res: Response): Promise<any> => {
 });
 
 // GET /api/owner/audit-reports
-router.get('/audit-reports', async (req: Request, res: Response): Promise<any> => {
+router.get('/audit-reports', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
-    const where: any = {};
+    const organizationId = req.user?.organizationId;
+    const where: any = { deletedAt: null };
+    if (organizationId) where.organizationId = organizationId;
     if (venueId) where.venueId = venueId;
 
     const audits = await prisma.audit.findMany({
@@ -321,14 +371,21 @@ router.get('/audit-reports', async (req: Request, res: Response): Promise<any> =
 });
 
 // GET /api/owner/repair-logs
-router.get('/repair-logs', async (req: Request, res: Response): Promise<any> => {
+router.get('/repair-logs', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const venueId = req.query.venueId as string | undefined;
+    const organizationId = req.user?.organizationId;
+
+    const where: any = {};
+    if (venueId) {
+      where.defect = { inspectionItem: { audit: { venueId } } };
+    }
+    if (organizationId) {
+      where.defect = { ...where.defect, organizationId };
+    }
 
     const repairs = await prisma.repair.findMany({
-      where: venueId
-        ? { defect: { inspectionItem: { audit: { venueId } } } }
-        : {},
+      where,
       include: {
         technician: true,
         defect: {
@@ -350,7 +407,7 @@ router.get('/repair-logs', async (req: Request, res: Response): Promise<any> => 
 });
 
 // POST /api/owner/missed-audit-review/:auditId
-router.post('/missed-audit-review/:auditId', async (req: Request, res: Response): Promise<any> => {
+router.post('/missed-audit-review/:auditId', async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
     const auditId = req.params.auditId as string;
     const { remarks } = req.body || {};
@@ -369,6 +426,16 @@ router.post('/missed-audit-review/:auditId', async (req: Request, res: Response)
           : `Owner Review Signed: "${remarks || 'All issues verified and cleared by Venue Owner'}"`,
       },
       include: { venue: true, auditor: true, score: true },
+    });
+
+    await logAuditEvent({
+      organizationId: req.user?.organizationId,
+      userId: req.user?.userId,
+      action: 'OWNER_MISSED_AUDIT_CLEARED',
+      entityType: 'Audit',
+      entityId: auditId,
+      details: { remarks: remarks || 'Cleared by Venue Owner' },
+      req,
     });
 
     return res.json({ success: true, audit: updatedAudit });

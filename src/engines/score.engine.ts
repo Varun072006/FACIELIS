@@ -4,6 +4,7 @@ export async function calculateAuditScores(auditId: string) {
   const audit = await prisma.audit.findUnique({
     where: { id: auditId },
     include: {
+      venue: true,
       inspectionItems: {
         include: {
           asset: {
@@ -18,6 +19,8 @@ export async function calculateAuditScores(auditId: string) {
   if (!audit) throw new Error('Audit not found');
 
   const items = audit.inspectionItems;
+  const organizationId = audit.organizationId || audit.venue.organizationId;
+
   if (items.length === 0) {
     return await prisma.score.upsert({
       where: { auditId },
@@ -25,6 +28,7 @@ export async function calculateAuditScores(auditId: string) {
       create: {
         auditId,
         venueId: audit.venueId,
+        organizationId,
         housekeepingScore: 100,
         electricalScore: 100,
         plumbingScore: 100,
@@ -49,7 +53,7 @@ export async function calculateAuditScores(auditId: string) {
   let criticalFailuresCount = 0;
 
   for (const item of items) {
-    const catName = item.defect?.category || getCategoryFromAssetType(item.asset.name);
+    const catName = item.defect?.category?.split(' (')[0] || getCategoryFromAssetType(item.asset.name);
     if (!categories[catName]) {
       categories[catName] = { total: 0, pass: 0 };
     }
@@ -94,6 +98,7 @@ export async function calculateAuditScores(auditId: string) {
     create: {
       auditId,
       venueId: audit.venueId,
+      organizationId,
       housekeepingScore: hk,
       electricalScore: elec,
       plumbingScore: plumb,

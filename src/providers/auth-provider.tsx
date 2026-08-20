@@ -8,6 +8,8 @@ export interface User {
   email: string;
   name: string;
   role: 'SUPER_ADMIN' | 'MANAGER' | 'AUDITOR' | 'TECHNICIAN' | 'OWNER';
+  organizationId?: string;
+  organizationName?: string;
   department?: string;
   departmentId?: string;
   venueId?: string;
@@ -83,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
     };
-  }, []); // Run once on initial mount
+  }, []);
 
   useEffect(() => {
     if (!loading && !user && pathname !== '/login') {

@@ -30,26 +30,37 @@ export async function generateFacilityCertificate(auditId: string, managerId?: s
   const validFrom = new Date();
   const validUntil = new Date(Date.now() + 180 * 24 * 60 * 60 * 1000); // 6 months validity
 
-  const cert = await prisma.certificate.upsert({
+  const existingCert = await prisma.certificate.findFirst({
     where: { auditId },
-    update: {
-      fitnessStatus,
-      overallScore: score.overallScore,
-      validUntil,
-      approvedByManagerId: managerId || null,
-    },
-    create: {
-      certificateNo,
-      venueId: audit.venueId,
-      auditId,
-      fitnessStatus,
-      overallScore: score.overallScore,
-      validFrom,
-      validUntil,
-      approvedByManagerId: managerId || null,
-      qrCode: `FACIELIS-CERT:${certificateNo}:${audit.venue.code}`,
-    },
   });
+
+  let cert;
+  if (existingCert) {
+    cert = await prisma.certificate.update({
+      where: { id: existingCert.id },
+      data: {
+        fitnessStatus,
+        overallScore: score.overallScore,
+        validUntil,
+        approvedByManagerId: managerId || null,
+      },
+    });
+  } else {
+    cert = await prisma.certificate.create({
+      data: {
+        certificateNo,
+        venueId: audit.venueId,
+        auditId,
+        organizationId: audit.organizationId || audit.venue.organizationId,
+        fitnessStatus,
+        overallScore: score.overallScore,
+        validFrom,
+        validUntil,
+        approvedByManagerId: managerId || null,
+        qrCode: `FACIELIS-CERT:${certificateNo}:${audit.venue.code}`,
+      },
+    });
+  }
 
   return cert;
 }

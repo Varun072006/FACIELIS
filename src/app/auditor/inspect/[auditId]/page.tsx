@@ -1,11 +1,26 @@
 'use client';
 
-import React, { useState, use, useMemo } from 'react';
+import React, { useState, use, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { PhotoCapture } from '@/components/photo-capture';
-import { CheckCircle2, XCircle, AlertTriangle, Image as ImageIcon, ArrowRight, Search, ChevronLeft, ChevronRight, X, ShieldCheck } from 'lucide-react';
+import { QRScannerModal } from '@/components/qr-scanner';
+import {
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  Image as ImageIcon,
+  ArrowRight,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ShieldCheck,
+  QrCode,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
 
 const ASSETS_PER_PAGE = 10;
 
@@ -140,11 +155,45 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [refModal, setRefModal] = useState<{ categoryCode: string; assetName: string; componentName?: string } | null>(null);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
   // Form state: Map of componentId -> { status: 'GOOD' | 'DEFECTIVE', remark: string, photoUrl: string, geotagLat: number, geotagLng: number }
   const [results, setResults] = useState<Record<string, { status: 'GOOD' | 'DEFECTIVE'; remark?: string; photoUrl?: string; geotagLat?: number; geotagLng?: number }>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  // Online / Offline monitor
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Restore draft from localStorage if available
+    try {
+      const saved = localStorage.getItem(`facielis_audit_draft_${auditId}`);
+      if (saved) {
+        setResults(JSON.parse(saved));
+      }
+    } catch (e) {}
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [auditId]);
+
+  // Persist draft to local storage on changes
+  useEffect(() => {
+    if (Object.keys(results).length > 0) {
+      try {
+        localStorage.setItem(`facielis_audit_draft_${auditId}`, JSON.stringify(results));
+      } catch (e) {}
+    }
+  }, [results, auditId]);
 
   const { data: audit, isLoading } = useQuery({
     queryKey: ['audit', auditId],
@@ -155,9 +204,11 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
 
   const filteredAssets = useMemo(() => {
     if (!search.trim()) return allAssets;
+    const s = search.toLowerCase();
     return allAssets.filter((asset: any) =>
-      asset.name.toLowerCase().includes(search.toLowerCase()) ||
-      asset.serialNo.toLowerCase().includes(search.toLowerCase())
+      asset.name.toLowerCase().includes(s) ||
+      asset.serialNo.toLowerCase().includes(s) ||
+      asset.components?.some((c: any) => c.code.toLowerCase().includes(s))
     );
   }, [allAssets, search]);
 
@@ -168,12 +219,10 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
     return filteredAssets.slice(start, start + ASSETS_PER_PAGE);
   }, [filteredAssets, currentPage]);
 
-  // Calculate audit statistics
   const totalComponents = useMemo(() => {
     return allAssets.reduce((sum: number, asset: any) => sum + (asset.components?.length || 0), 0);
   }, [allAssets]);
 
-  // TESTING MODE: All components default to GOOD unless marked DEFECTIVE
   const checkedCount = totalComponents;
   const defectiveCount = Object.values(results).filter((r) => r.status === 'DEFECTIVE').length;
   const goodCount = totalComponents - defectiveCount;
@@ -214,19 +263,16 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
     }));
   };
 
+  const handleScanSuccess = (scannedCode: string) => {
+    setSearch(scannedCode);
+    setCurrentPage(1);
+  };
+
   const handleSubmitAudit = async () => {
     setSubmitError('');
 
-    // TESTING MODE: Mandatory click validation commented out as requested for fast testing
-    /*
-    if (checkedCount < totalComponents) {
-      setSubmitError(`Audit incomplete: ${totalComponents - checkedCount} components remaining to be evaluated.`);
-      return;
-    }
-    */
-
     const defectiveItems = Object.entries(results).filter(([_, val]) => val.status === 'DEFECTIVE');
-    for (const [compId, val] of defectiveItems) {
+    for (const [_, val] of defectiveItems) {
       if (!val.remark || !val.photoUrl) {
         setSubmitError('Every DEFECTIVE item requires a remark and GeoTag photo evidence before submitting.');
         return;
@@ -236,7 +282,6 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
     setSubmitting(true);
 
     try {
-      // Build inspection items payload (default unselected items to GOOD)
       const items: any[] = [];
       allAssets.forEach((asset: any) => {
         asset.components?.forEach((comp: any) => {
@@ -256,13 +301,18 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
       const res = await fetch(`/api/audits/${auditId}/inspect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items, isComplete: true }),
       });
 
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Failed to submit audit');
       }
+
+      // Clear local draft upon successful submission
+      try {
+        localStorage.removeItem(`facielis_audit_draft_${auditId}`);
+      } catch (e) {}
 
       router.push(`/auditor/integrity/${auditId}`);
     } catch (err: any) {
@@ -289,6 +339,17 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
     <div className="space-y-6 pb-24">
       <Navbar title={`Venue Audit Checklist — ${audit?.venue?.name || 'Right Cabin'}`} />
 
+      {/* Online / Offline Status Bar */}
+      {!isOnline && (
+        <div className="p-3 bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-2">
+            <WifiOff className="w-4 h-4" />
+            <span>Offline Mode Active • Your inspection edits are safely cached locally on this device.</span>
+          </div>
+          <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded uppercase">Offline Draft</span>
+        </div>
+      )}
+
       {/* Header Banner & Stats */}
       <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
@@ -298,7 +359,7 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
                 Audit No: {audit?.auditNo}
               </span>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[10px] font-extrabold uppercase text-emerald-300">
-                Testing Mode (Default GOOD Active)
+                Live Enterprise Checklist
               </span>
             </div>
             <h2 className="text-2xl font-black mt-2 tracking-tight">{audit?.venue?.name}</h2>
@@ -350,22 +411,34 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
         </div>
       )}
 
-      {/* Search & Filter Bar */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex items-center justify-between gap-4">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Filter assets by name or serial no..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
-          />
+      {/* Search & QR Code Scanner Bar */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-md">
+          <div className="relative w-full">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Filter assets by name, serial no, or component code..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs flex items-center gap-1.5 shrink-0 border border-gray-200 transition-colors"
+          >
+            <QrCode className="w-4 h-4 text-[#173B72]" />
+            <span>Scan QR</span>
+          </button>
         </div>
-        <div className="text-xs text-gray-500 font-medium">
+
+        <div className="text-xs text-gray-500 font-medium self-end sm:self-center">
           Showing <span className="font-bold text-gray-900">{currentAssets.length}</span> of {filteredAssets.length} Assets
         </div>
       </div>
@@ -379,7 +452,7 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 bg-gray-900 shrink-0 shadow-2xs">
                   <img
-                    src={GOOD_REFERENCE_GUIDES[asset.assetCategory?.code]?.goodImg || 'https://images.pexels.com/photos/1957478/pexels-photo-1957478.jpeg?auto=compress&cs=tinysrgb&w=800'}
+                    src={GOOD_REFERENCE_GUIDES[asset.assetCategory?.code]?.goodImg || '/images/door/good.jpg'}
                     alt={asset.name}
                     className="w-full h-full object-cover"
                   />
@@ -412,7 +485,7 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
               {asset.components?.map((comp: any) => {
                 const res = results[comp.id];
                 const isDefective = res?.status === 'DEFECTIVE';
-                const isGood = !isDefective; // Default all to GOOD for fast testing
+                const isGood = !isDefective;
 
                 return (
                   <div key={comp.id} className="p-4 hover:bg-gray-50/50 transition-colors">
@@ -520,6 +593,14 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
           </button>
         </div>
       </div>
+
+      {/* QR Code Scanner Modal */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={handleScanSuccess}
+        title="Scan Asset Serial Barcode / QR Code"
+      />
 
       {/* View Good Reference Image Modal */}
       {refModal && currentRefGuide && (

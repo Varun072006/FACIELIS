@@ -8,6 +8,7 @@ export interface TokenPayload {
   email: string;
   name: string;
   role: string;
+  organizationId?: string | null;
   departmentId?: string | null;
 }
 

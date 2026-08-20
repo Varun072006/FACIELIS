@@ -23,7 +23,7 @@ export default function ManagerCertificatesPage() {
                 score={c.overallScore}
                 status={c.fitnessStatus}
                 validFrom={c.validFrom}
-                validUntil={c.validUntil}
+                validUntil={c.validUntil}  
                 approvedBy="Facility Manager"
               />
             </div>

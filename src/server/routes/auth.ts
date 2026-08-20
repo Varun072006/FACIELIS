@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../../lib/db';
 import { comparePassword, signToken, verifyToken } from '../../lib/auth';
+import { logAuditEvent } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -15,10 +16,10 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
 
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { department: true, building: true, ownedVenues: true },
+      include: { department: true, building: true, ownedVenues: true, organization: true },
     });
 
-    if (!user) {
+    if (!user || user.deletedAt) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -32,6 +33,7 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
       email: user.email,
       name: user.name,
       role: user.role,
+      organizationId: user.organizationId,
       departmentId: user.departmentId,
     });
 
@@ -39,6 +41,18 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
       httpOnly: true,
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
+
+    // Log successful login
+    await logAuditEvent({
+      organizationId: user.organizationId,
+      userId: user.id,
+      action: 'USER_LOGIN',
+      entityType: 'User',
+      entityId: user.id,
+      details: { email: user.email, role: user.role },
+      req,
     });
 
     return res.json({
@@ -47,6 +61,8 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
         email: user.email,
         name: user.name,
         role: user.role,
+        organizationId: user.organizationId,
+        organizationName: user.organization?.name,
         department: user.department?.name,
         departmentId: user.departmentId,
         venueId: user.ownedVenues?.[0]?.id || null,
@@ -59,7 +75,7 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
 });
 
 // POST /api/auth/logout
-router.post('/logout', (_req: Request, res: Response) => {
+router.post('/logout', async (req: Request, res: Response) => {
   res.clearCookie('facielis_token', { path: '/' });
   return res.json({ success: true });
 });
@@ -83,11 +99,11 @@ router.get('/me', async (req: Request, res: Response): Promise<any> => {
 
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
-      include: { department: true, building: true, ownedVenues: true },
+      include: { department: true, building: true, ownedVenues: true, organization: true },
     });
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    if (!user || user.deletedAt) {
+      return res.status(404).json({ error: 'User not found or deactivated' });
     }
 
     return res.json({
@@ -96,6 +112,8 @@ router.get('/me', async (req: Request, res: Response): Promise<any> => {
         email: user.email,
         name: user.name,
         role: user.role,
+        organizationId: user.organizationId,
+        organizationName: user.organization?.name,
         department: user.department?.name,
         departmentId: user.departmentId,
         venueId: user.ownedVenues?.[0]?.id || null,
