@@ -1,6 +1,15 @@
 import prisma from '@/lib/db';
 
+let lastSLACheckTime = 0;
+
 export async function checkAndUpdateOverdueDefects() {
+  const nowMs = Date.now();
+  // Throttle to at most once every 30 seconds to avoid DB write-lock overhead on every GET
+  if (nowMs - lastSLACheckTime < 30_000) {
+    return { count: 0 };
+  }
+  lastSLACheckTime = nowMs;
+
   const now = new Date();
 
   // Find OPEN/ASSIGNED defects past SLA deadline

@@ -47,24 +47,29 @@ export default function AuditSchedulePage() {
   const { data: audits, isLoading: loadingAudits } = useQuery({
     queryKey: ['audits'],
     queryFn: () => fetch('/api/audits').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: orgs } = useQuery({
     queryKey: ['facilities'],
     queryFn: () => fetch('/api/facilities').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: auditors } = useQuery({
     queryKey: ['auditors'],
     queryFn: () => fetch('/api/users?role=AUDITOR').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: technicians } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => fetch('/api/users?role=TECHNICIAN').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const { data: auditDetail, isLoading: loadingAuditDetail } = useQuery({
     queryKey: ['audit-detail', reviewAuditId],
     queryFn: () => (reviewAuditId ? fetch(`/api/audits/${reviewAuditId}`).then((res) => res.json()) : null),
     enabled: !!reviewAuditId,
+    placeholderData: (previousData) => previousData,
   });
 
   const venues = orgs?.[0]?.campuses?.[0]?.buildings?.[0]?.floors?.[0]?.venues || [];

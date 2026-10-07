@@ -35,7 +35,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response): Promise<any> =
         },
         auditor: true,
         inspectionItems: {
-          include: { defect: true },
+          select: { id: true },
         },
         score: true,
         certificate: true,
@@ -43,6 +43,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response): Promise<any> =
       orderBy: { createdAt: 'desc' },
     });
 
+    res.setHeader('Cache-Control', 'private, max-age=5, stale-while-revalidate=30');
     return res.json(audits);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

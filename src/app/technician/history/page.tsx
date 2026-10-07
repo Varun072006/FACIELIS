@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useDeferredValue, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
@@ -10,25 +10,32 @@ import { Wrench, Calendar, Clock, Search, Filter, ShieldCheck, CheckCircle2 } fr
 
 export default function TechnicianHistoryPage() {
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [filterDept, setFilterDept] = useState('ALL');
 
   const { data: defects, isLoading } = useQuery({
-    queryKey: ['technician-history'],
+    queryKey: ['defects'],
     queryFn: () => fetch('/api/defects').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const repairedDefects = Array.isArray(defects)
-    ? defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS' || d.status === 'VERIFIED' || d.repair !== null)
-    : [];
+  const repairedDefects = useMemo(() => {
+    if (!Array.isArray(defects)) return [];
+    return defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS' || d.status === 'VERIFIED' || d.repair !== null);
+  }, [defects]);
 
-  const filteredHistory = repairedDefects.filter((d: any) => {
-    const matchesSearch =
-      d.defectNo?.toLowerCase().includes(search.toLowerCase()) ||
-      d.asset?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      d.component?.name?.toLowerCase().includes(search.toLowerCase());
-    const matchesDept = filterDept === 'ALL' || d.department?.code === filterDept;
-    return matchesSearch && matchesDept;
-  });
+  const filteredHistory = useMemo(() => {
+    const term = deferredSearch.toLowerCase().trim();
+    return repairedDefects.filter((d: any) => {
+      const matchesSearch =
+        !term ||
+        d.defectNo?.toLowerCase().includes(term) ||
+        d.asset?.name?.toLowerCase().includes(term) ||
+        d.component?.name?.toLowerCase().includes(term);
+      const matchesDept = filterDept === 'ALL' || d.department?.code === filterDept;
+      return matchesSearch && matchesDept;
+    });
+  }, [repairedDefects, deferredSearch, filterDept]);
 
   return (
     <div className="space-y-5 pb-16">

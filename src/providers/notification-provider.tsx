@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './auth-provider';
 import { Bell, CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
 
@@ -30,14 +31,14 @@ const NotificationContext = createContext<NotificationContextType>({
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [toast, setToast] = useState<AppNotification | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    // Connect to Socket.io server on port 5000
-    const socket: Socket = io('http://localhost:5000', {
+    const socket: Socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000', {
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 5,
     });
@@ -65,6 +66,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setNotifications((prev) => [newNotif, ...prev]);
       setToast(newNotif);
 
+      // Invalidate relevant React Query cache entries in background
+      if (data.type === 'DEFECT' || data.type === 'ASSIGNMENT' || data.type === 'REPAIR' || data.type === 'OWNER_DEFECT') {
+        queryClient.invalidateQueries({ queryKey: ['defects'] });
+        queryClient.invalidateQueries({ queryKey: ['technicians'] });
+      } else if (data.type === 'AUDIT') {
+        queryClient.invalidateQueries({ queryKey: ['audits'] });
+      } else if (data.type === 'CERTIFICATE') {
+        queryClient.invalidateQueries({ queryKey: ['certificates'] });
+      }
+
       // Auto-hide toast popup after 5 seconds
       setTimeout(() => {
         setToast((current) => (current?.id === newNotif.id ? null : current));
@@ -74,7 +85,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => {
       socket.disconnect();
     };
-  }, [user]);
+  }, [user, queryClient]);
 
   const markAllAsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));

@@ -13,6 +13,7 @@ export default function CertificatesPage() {
   const { data: certs, isLoading } = useQuery({
     queryKey: ['certificates'],
     queryFn: () => fetch('/api/certificates').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const certList = Array.isArray(certs) ? certs : [];

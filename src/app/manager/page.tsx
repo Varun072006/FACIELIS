@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatCard } from '@/components/stat-card';
@@ -24,23 +25,26 @@ export default function ManagerDashboard() {
   const { data: audits, isLoading: auditsLoading } = useQuery({
     queryKey: ['audits'],
     queryFn: () => fetch('/api/audits').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: defects, isLoading: defectsLoading } = useQuery({
     queryKey: ['defects'],
     queryFn: () => fetch('/api/defects').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: certs, isLoading: certsLoading } = useQuery({
     queryKey: ['certificates'],
     queryFn: () => fetch('/api/certificates').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const isLoading = auditsLoading || defectsLoading || certsLoading;
+  const isLoading = (auditsLoading && !audits) || (defectsLoading && !defects) || (certsLoading && !certs);
 
-  const activeAudits = Array.isArray(audits) ? audits.length : 0;
-  const pendingReviewAudits = Array.isArray(audits) ? audits.filter((a: any) => a.status === 'PENDING_REVIEW').length : 0;
-  const pendingDefects = Array.isArray(defects) ? defects.filter((d: any) => d.status === 'OPEN' || d.status === 'ASSIGNED').length : 0;
-  const pendingCrossDefects = Array.isArray(defects) ? defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS').length : 0;
-  const overdueDefects = Array.isArray(defects) ? defects.filter((d: any) => d.isOverdue).length : 0;
+  const activeAudits = useMemo(() => Array.isArray(audits) ? audits.length : 0, [audits]);
+  const pendingReviewAudits = useMemo(() => Array.isArray(audits) ? audits.filter((a: any) => a.status === 'PENDING_REVIEW').length : 0, [audits]);
+  const pendingDefects = useMemo(() => Array.isArray(defects) ? defects.filter((d: any) => d.status === 'OPEN' || d.status === 'ASSIGNED').length : 0, [defects]);
+  const pendingCrossDefects = useMemo(() => Array.isArray(defects) ? defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS').length : 0, [defects]);
+  const overdueDefects = useMemo(() => Array.isArray(defects) ? defects.filter((d: any) => d.isOverdue).length : 0, [defects]);
 
   const auditSparkData = [
     { v: Math.max(1, pendingReviewAudits - 2) },

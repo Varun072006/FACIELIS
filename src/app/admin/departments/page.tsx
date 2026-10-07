@@ -9,6 +9,7 @@ export default function DepartmentsPage() {
   const { data: depts, isLoading } = useQuery({
     queryKey: ['departments'],
     queryFn: () => fetch('/api/departments').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const deptList = Array.isArray(depts) ? depts : [];

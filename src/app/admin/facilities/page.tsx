@@ -9,6 +9,7 @@ export default function FacilitiesPage() {
   const { data: orgs, isLoading } = useQuery({
     queryKey: ['facilities'],
     queryFn: () => fetch('/api/facilities').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   return (

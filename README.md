@@ -93,7 +93,10 @@ npx prisma db seed
 npm run dev
 ```
 
-Open [http://localhost:3847](http://localhost:3847). The development command starts both the Next.js frontend on port `3847` and the Express API with Socket.IO on port `5000`.
+Open the frontend URL printed by `npm run dev` (normally [http://localhost:3847](http://localhost:3847)). The command starts both the Next.js frontend and the Express API with Socket.IO (normally on port `5000`).
+If either default port is already occupied, `npm run dev` automatically selects the next available port (up to 100 ports after the preferred port) and prints the frontend and API URLs. API requests, image uploads, and Socket.IO notifications are configured to use the selected API port.
+
+To choose different preferred ports, set `WEB_PORT` for the frontend and `PORT` for the API before starting the command. If those ports are occupied, the launcher still searches for available ports.
 
 To run either process separately, use two terminals:
 

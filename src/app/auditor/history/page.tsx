@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useDeferredValue, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout/navbar';
@@ -21,22 +21,27 @@ import {
 
 export default function AuditorHistoryPage() {
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [filterStatus, setFilterStatus] = useState('ALL');
 
   const { data: audits, isLoading } = useQuery({
-    queryKey: ['auditor-history'],
+    queryKey: ['audits'],
     queryFn: () => fetch('/api/audits').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const filteredAudits = Array.isArray(audits)
-    ? audits.filter((a: any) => {
-        const matchesSearch =
-          a.auditNo?.toLowerCase().includes(search.toLowerCase()) ||
-          a.venue?.name?.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus = filterStatus === 'ALL' || a.status === filterStatus;
-        return matchesSearch && matchesStatus;
-      })
-    : [];
+  const filteredAudits = useMemo(() => {
+    if (!Array.isArray(audits)) return [];
+    const term = deferredSearch.toLowerCase();
+    return audits.filter((a: any) => {
+      const matchesSearch =
+        !term ||
+        a.auditNo?.toLowerCase().includes(term) ||
+        a.venue?.name?.toLowerCase().includes(term);
+      const matchesStatus = filterStatus === 'ALL' || a.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [audits, deferredSearch, filterStatus]);
 
   return (
     <div className="space-y-5 pb-16">

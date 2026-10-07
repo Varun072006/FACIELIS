@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useDeferredValue, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import {
@@ -16,23 +16,29 @@ import { Users, Mail, Building, Shield, Filter, Search } from 'lucide-react';
 export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
 
   const { data: users, isLoading } = useQuery({
-    queryKey: ['users', roleFilter],
-    queryFn: () =>
-      fetch(roleFilter === 'ALL' ? '/api/users' : `/api/users?role=${roleFilter}`).then((res) => res.json()),
+    queryKey: ['users'],
+    queryFn: () => fetch('/api/users').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const userList = Array.isArray(users) ? users : [];
-  const filteredUsers = userList.filter((u: any) => {
-    if (!search.trim()) return true;
-    const term = search.toLowerCase();
-    return (
-      u.name?.toLowerCase().includes(term) ||
-      u.email?.toLowerCase().includes(term) ||
-      u.department?.name?.toLowerCase().includes(term)
-    );
-  });
+  const userList = useMemo(() => Array.isArray(users) ? users : [], [users]);
+
+  const filteredUsers = useMemo(() => {
+    const term = deferredSearch.toLowerCase().trim();
+    return userList.filter((u: any) => {
+      const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
+      if (!matchesRole) return false;
+      if (!term) return true;
+      return (
+        u.name?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term) ||
+        u.department?.name?.toLowerCase().includes(term)
+      );
+    });
+  }, [userList, roleFilter, deferredSearch]);
 
   return (
     <div className="space-y-6 pb-16">

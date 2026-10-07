@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatCard } from '@/components/stat-card';
@@ -24,27 +25,31 @@ export default function AdminDashboard() {
   const { data: assets, isLoading: assetsLoading } = useQuery({
     queryKey: ['assets'],
     queryFn: () => fetch('/api/assets').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: defects, isLoading: defectsLoading } = useQuery({
     queryKey: ['defects'],
     queryFn: () => fetch('/api/defects').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: audits, isLoading: auditsLoading } = useQuery({
     queryKey: ['audits'],
     queryFn: () => fetch('/api/audits').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
   const { data: certs, isLoading: certsLoading } = useQuery({
     queryKey: ['certificates'],
     queryFn: () => fetch('/api/certificates').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const isLoading = assetsLoading || defectsLoading || auditsLoading || certsLoading;
+  const isLoading = (assetsLoading && !assets) || (defectsLoading && !defects) || (auditsLoading && !audits) || (certsLoading && !certs);
 
-  const totalAssets = Array.isArray(assets) ? assets.length : 0;
-  const openDefects = Array.isArray(defects) ? defects.filter((d: any) => d.status !== 'VERIFIED').length : 0;
-  const overdueDefects = Array.isArray(defects) ? defects.filter((d: any) => d.isOverdue).length : 0;
-  const activeAudits = Array.isArray(audits) ? audits.length : 0;
-  const validCerts = Array.isArray(certs) ? certs.filter((c: any) => c.fitnessStatus === 'FIT').length : 0;
+  const totalAssets = useMemo(() => Array.isArray(assets) ? assets.length : 0, [assets]);
+  const openDefects = useMemo(() => Array.isArray(defects) ? defects.filter((d: any) => d.status !== 'VERIFIED').length : 0, [defects]);
+  const overdueDefects = useMemo(() => Array.isArray(defects) ? defects.filter((d: any) => d.isOverdue).length : 0, [defects]);
+  const activeAudits = useMemo(() => Array.isArray(audits) ? audits.length : 0, [audits]);
+  const validCerts = useMemo(() => Array.isArray(certs) ? certs.filter((c: any) => c.fitnessStatus === 'FIT').length : 0, [certs]);
 
   return (
     <div className="space-y-5">

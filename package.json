@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npx tsx src/server/index.ts\" \"next dev --turbo -p 3847\"",
-    "dev:fast": "npx prisma db push && npx prisma db seed && concurrently \"npx tsx src/server/index.ts\" \"next dev --turbo -p 3847\"",
+    "dev": "node scripts/dev.js",
+    "dev:fast": "npx prisma db push && npx prisma db seed && npm run dev",
     "server": "npx tsx src/server/index.ts",
     "build": "next build",
     "start": "concurrently \"npx tsx src/server/index.ts\" \"next start -p 3847\"",

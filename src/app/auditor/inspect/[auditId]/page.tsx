@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use, useMemo, useEffect } from 'react';
+import React, { useState, use, useMemo, useEffect, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
@@ -195,22 +195,25 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
     }
   }, [results, auditId]);
 
+  const deferredSearch = useDeferredValue(search);
+
   const { data: audit, isLoading } = useQuery({
     queryKey: ['audit', auditId],
     queryFn: () => fetch(`/api/audits/${auditId}`).then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const allAssets = useMemo(() => audit?.venue?.assets || [], [audit]);
 
   const filteredAssets = useMemo(() => {
-    if (!search.trim()) return allAssets;
-    const s = search.toLowerCase();
+    if (!deferredSearch.trim()) return allAssets;
+    const s = deferredSearch.toLowerCase();
     return allAssets.filter((asset: any) =>
-      asset.name.toLowerCase().includes(s) ||
-      asset.serialNo.toLowerCase().includes(s) ||
-      asset.components?.some((c: any) => c.code.toLowerCase().includes(s))
+      asset.name?.toLowerCase().includes(s) ||
+      asset.serialNo?.toLowerCase().includes(s) ||
+      asset.components?.some((c: any) => c.code?.toLowerCase().includes(s))
     );
-  }, [allAssets, search]);
+  }, [allAssets, deferredSearch]);
 
   const totalPages = Math.ceil(filteredAssets.length / ASSETS_PER_PAGE) || 1;
 

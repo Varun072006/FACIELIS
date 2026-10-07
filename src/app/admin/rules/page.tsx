@@ -28,6 +28,7 @@ export default function RulesPage() {
   const { data: rules, isLoading } = useQuery({
     queryKey: ['rules'],
     queryFn: () => fetch('/api/rules').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const createRuleMutation = useMutation({

@@ -17,11 +17,13 @@ export default function ReportsPage() {
   const { data: scores } = useQuery({
     queryKey: ['scores'],
     queryFn: () => fetch('/api/scores').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const { data: auditLogs, isLoading: loadingLogs } = useQuery({
     queryKey: ['audit-logs'],
     queryFn: () => fetch('/api/audit-logs').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const latestScore = Array.isArray(scores) && scores.length > 0 ? scores[0] : null;

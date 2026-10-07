@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useDeferredValue, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
@@ -36,17 +36,20 @@ export default function ManagerDefectsPage() {
   const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const deferredSearch = useDeferredValue(searchTerm);
   const [selectedDefect, setSelectedDefect] = useState<any | null>(null);
   const [newTechnicianId, setNewTechnicianId] = useState<string>('');
 
   const { data: defects, isLoading } = useQuery({
     queryKey: ['defects'],
     queryFn: () => fetch('/api/defects').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const { data: technicians } = useQuery({
     queryKey: ['technicians'],
     queryFn: () => fetch('/api/users?role=TECHNICIAN').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const updateDefectMutation = useMutation({
@@ -59,9 +62,44 @@ export default function ManagerDefectsPage() {
       if (!res.ok) throw new Error('Failed to update defect routing/status');
       return res.json();
     },
-    onSuccess: (updatedDefect) => {
+    onMutate: async ({ id, technicianId, status }) => {
+      await queryClient.cancelQueries({ queryKey: ['defects'] });
+      const previousDefects = queryClient.getQueryData(['defects']);
+      const tech = Array.isArray(technicians) ? (technicians as any[]).find((t: any) => t.id === technicianId) : null;
+
+      queryClient.setQueryData(['defects'], (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((d: any) => {
+          if (d.id !== id) return d;
+          return {
+            ...d,
+            ...(technicianId ? { technicianId, technician: tech || d.technician } : {}),
+            ...(status ? { status } : {}),
+          };
+        });
+      });
+
+      setSelectedDefect((prev: any) => {
+        if (!prev || prev.id !== id) return prev;
+        return {
+          ...prev,
+          ...(technicianId ? { technicianId, technician: tech || prev.technician } : {}),
+          ...(status ? { status } : {}),
+        };
+      });
+
+      return { previousDefects };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousDefects) {
+        queryClient.setQueryData(['defects'], context.previousDefects);
+      }
+    },
+    onSettled: (updatedDefect) => {
       queryClient.invalidateQueries({ queryKey: ['defects'] });
-      setSelectedDefect(updatedDefect);
+      if (updatedDefect) {
+        setSelectedDefect(updatedDefect);
+      }
     },
   });
 
@@ -90,37 +128,39 @@ export default function ManagerDefectsPage() {
     });
   };
 
-  const allDefects = Array.isArray(defects) ? defects : [];
+  const allDefects = useMemo(() => Array.isArray(defects) ? defects : [], [defects]);
 
-  const filteredDefects = allDefects
-    .filter((d: any) => {
-      if (activeFilter === 'OPEN') return d.status === 'OPEN';
-      if (activeFilter === 'ASSIGNED') return d.status === 'ASSIGNED';
-      if (activeFilter === 'REPAIRED_PENDING_CROSS') return d.status === 'REPAIRED_PENDING_CROSS';
-      if (activeFilter === 'VERIFIED') return d.status === 'VERIFIED';
-      if (activeFilter === 'REOPENED') return d.status === 'REOPENED';
-      return true;
-    })
-    .filter((d: any) => {
-      if (!searchTerm.trim()) return true;
-      const term = searchTerm.toLowerCase();
-      return (
-        d.defectNo?.toLowerCase().includes(term) ||
-        d.component?.name?.toLowerCase().includes(term) ||
-        d.asset?.name?.toLowerCase().includes(term) ||
-        d.category?.toLowerCase().includes(term) ||
-        d.technician?.name?.toLowerCase().includes(term)
-      );
-    });
-
-  const counts = {
+  const counts = useMemo(() => ({
     all: allDefects.length,
     open: allDefects.filter((d: any) => d.status === 'OPEN').length,
     assigned: allDefects.filter((d: any) => d.status === 'ASSIGNED').length,
     pendingCross: allDefects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS').length,
     verified: allDefects.filter((d: any) => d.status === 'VERIFIED').length,
     reopened: allDefects.filter((d: any) => d.status === 'REOPENED').length,
-  };
+  }), [allDefects]);
+
+  const filteredDefects = useMemo(() => {
+    const term = deferredSearch.toLowerCase().trim();
+    return allDefects
+      .filter((d: any) => {
+        if (activeFilter === 'OPEN') return d.status === 'OPEN';
+        if (activeFilter === 'ASSIGNED') return d.status === 'ASSIGNED';
+        if (activeFilter === 'REPAIRED_PENDING_CROSS') return d.status === 'REPAIRED_PENDING_CROSS';
+        if (activeFilter === 'VERIFIED') return d.status === 'VERIFIED';
+        if (activeFilter === 'REOPENED') return d.status === 'REOPENED';
+        return true;
+      })
+      .filter((d: any) => {
+        if (!term) return true;
+        return (
+          d.defectNo?.toLowerCase().includes(term) ||
+          d.component?.name?.toLowerCase().includes(term) ||
+          d.asset?.name?.toLowerCase().includes(term) ||
+          d.category?.toLowerCase().includes(term) ||
+          d.technician?.name?.toLowerCase().includes(term)
+        );
+      });
+  }, [allDefects, activeFilter, deferredSearch]);
 
   const hasSubmittedRepair = selectedDefect?.repair !== null && selectedDefect?.repair !== undefined;
   const isClosedVerified = selectedDefect?.status === 'VERIFIED';

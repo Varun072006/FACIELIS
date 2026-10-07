@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Fragment, useMemo } from 'react';
+import React, { useState, Fragment, useMemo, useDeferredValue } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
@@ -29,6 +29,7 @@ const createStandardThumb = (categoryCode: string) => {
 export default function AssetsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [selectedCat, setSelectedCat] = useState('ALL');
   const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,18 +46,21 @@ export default function AssetsPage() {
   const { data: assets, isLoading } = useQuery({
     queryKey: ['assets'],
     queryFn: () => fetch('/api/assets').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
   const filteredAssets = useMemo(() => {
     if (!Array.isArray(assets)) return [];
+    const term = deferredSearch.toLowerCase().trim();
     return assets.filter((a: any) => {
       const matchesSearch =
-        a.name.toLowerCase().includes(search.toLowerCase()) ||
-        a.serialNo.toLowerCase().includes(search.toLowerCase());
+        !term ||
+        a.name.toLowerCase().includes(term) ||
+        a.serialNo.toLowerCase().includes(term);
       const matchesCat = selectedCat === 'ALL' || a.assetCategory?.code === selectedCat;
       return matchesSearch && matchesCat;
     });
-  }, [assets, search, selectedCat]);
+  }, [assets, deferredSearch, selectedCat]);
 
   const totalPages = Math.ceil(filteredAssets.length / ITEMS_PER_PAGE) || 1;
   const paginatedAssets = useMemo(() => {

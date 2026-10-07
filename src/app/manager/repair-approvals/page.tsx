@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useDeferredValue, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
@@ -224,27 +224,41 @@ function PhotoComparison({
 export default function ManagerRepairApprovalsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const { data: defects, isLoading } = useQuery({
-    queryKey: ['defects-pending-approval'],
+    queryKey: ['defects'],
     queryFn: () => fetch('/api/defects').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const pendingApprovals = Array.isArray(defects)
-    ? defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS' || (d.repair !== null && d.status !== 'VERIFIED'))
-    : [];
+  const pendingApprovals = useMemo(() => {
+    if (!Array.isArray(defects)) return [];
+    return defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS' || (d.repair !== null && d.status !== 'VERIFIED'));
+  }, [defects]);
 
-  const filteredDefects = pendingApprovals.filter((d: any) => {
-    return (
-      d.defectNo.toLowerCase().includes(search.toLowerCase()) ||
-      d.asset?.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.component?.name.toLowerCase().includes(search.toLowerCase())
-    );
-  });
+  const filteredDefects = useMemo(() => {
+    const term = deferredSearch.toLowerCase();
+    if (!term) return pendingApprovals;
+    return pendingApprovals.filter((d: any) => {
+      return (
+        d.defectNo.toLowerCase().includes(term) ||
+        d.asset?.name?.toLowerCase().includes(term) ||
+        d.component?.name?.toLowerCase().includes(term)
+      );
+    });
+  }, [pendingApprovals, deferredSearch]);
 
   const handleApproveRepair = async (defectId: string) => {
     setApprovingId(defectId);
+    // Optimistic cache update
+    const prevDefects = queryClient.getQueryData(['defects']);
+    queryClient.setQueryData(['defects'], (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((d: any) => d.id === defectId ? { ...d, status: 'VERIFIED' } : d);
+    });
+
     try {
       const res = await fetch(`/api/defects/${defectId}`, {
         method: 'PATCH',
@@ -252,19 +266,28 @@ export default function ManagerRepairApprovalsPage() {
         body: JSON.stringify({ status: 'VERIFIED' }),
       });
 
-      if (res.ok) {
-        queryClient.invalidateQueries({ queryKey: ['defects-pending-approval'] });
-        queryClient.invalidateQueries({ queryKey: ['defects'] });
+      if (!res.ok) {
+        // Rollback on error
+        queryClient.setQueryData(['defects'], prevDefects);
       }
     } catch (err) {
       console.error('Failed to approve repair:', err);
+      queryClient.setQueryData(['defects'], prevDefects);
     } finally {
       setApprovingId(null);
+      queryClient.invalidateQueries({ queryKey: ['defects'] });
     }
   };
 
   const handleRejectRepair = async (defectId: string) => {
     setApprovingId(defectId);
+    // Optimistic cache update
+    const prevDefects = queryClient.getQueryData(['defects']);
+    queryClient.setQueryData(['defects'], (old: any) => {
+      if (!Array.isArray(old)) return old;
+      return old.map((d: any) => d.id === defectId ? { ...d, status: 'ASSIGNED' } : d);
+    });
+
     try {
       const res = await fetch(`/api/defects/${defectId}`, {
         method: 'PATCH',
@@ -272,13 +295,15 @@ export default function ManagerRepairApprovalsPage() {
         body: JSON.stringify({ status: 'ASSIGNED' }),
       });
 
-      if (res.ok) {
-        queryClient.invalidateQueries({ queryKey: ['defects-pending-approval'] });
+      if (!res.ok) {
+        queryClient.setQueryData(['defects'], prevDefects);
       }
     } catch (err) {
       console.error('Failed to reject repair:', err);
+      queryClient.setQueryData(['defects'], prevDefects);
     } finally {
       setApprovingId(null);
+      queryClient.invalidateQueries({ queryKey: ['defects'] });
     }
   };
 

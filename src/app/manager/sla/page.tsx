@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatCard } from '@/components/stat-card';
@@ -26,39 +26,42 @@ export default function SLAPage() {
   const { data: defects, isLoading } = useQuery({
     queryKey: ['defects'],
     queryFn: () => fetch('/api/defects').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const allDefects = Array.isArray(defects) ? defects : [];
+  const allDefects = useMemo(() => Array.isArray(defects) ? defects : [], [defects]);
   const now = Date.now();
 
-  const overdueList = allDefects.filter((d: any) => {
+  const overdueList = useMemo(() => allDefects.filter((d: any) => {
     if (d.status === 'VERIFIED') return false;
     const deadline = new Date(d.slaDeadline).getTime();
     return d.isOverdue || deadline < now;
-  });
+  }), [allDefects, now]);
 
-  const dueSoonList = allDefects.filter((d: any) => {
+  const dueSoonList = useMemo(() => allDefects.filter((d: any) => {
     if (d.status === 'VERIFIED') return false;
     const deadline = new Date(d.slaDeadline).getTime();
     const diffHours = (deadline - now) / (1000 * 60 * 60);
     return diffHours >= 0 && diffHours <= 4;
-  });
+  }), [allDefects, now]);
 
-  const onTrackList = allDefects.filter((d: any) => {
+  const onTrackList = useMemo(() => allDefects.filter((d: any) => {
     if (d.status === 'VERIFIED') return true;
     const deadline = new Date(d.slaDeadline).getTime();
     const diffHours = (deadline - now) / (1000 * 60 * 60);
     return diffHours > 4;
-  });
+  }), [allDefects, now]);
 
   const total = allDefects.length;
   const overdueCount = overdueList.length;
   const rate = total > 0 ? Math.round(((total - overdueCount) / total) * 100) : 100;
 
-  let currentList = allDefects;
-  if (activeTab === 'overdue') currentList = overdueList;
-  if (activeTab === 'dueSoon') currentList = dueSoonList;
-  if (activeTab === 'onTrack') currentList = onTrackList;
+  const currentList = useMemo(() => {
+    if (activeTab === 'overdue') return overdueList;
+    if (activeTab === 'dueSoon') return dueSoonList;
+    if (activeTab === 'onTrack') return onTrackList;
+    return allDefects;
+  }, [activeTab, overdueList, dueSoonList, onTrackList, allDefects]);
 
   return (
     <div className="space-y-6 pb-16">

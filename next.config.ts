@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+const backendOrigin = process.env.BACKEND_ORIGIN || "http://localhost:5000";
+
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
@@ -10,15 +12,15 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: process.env.BACKEND_URL || "http://localhost:5000/api/:path*",
+        destination: process.env.BACKEND_URL || `${backendOrigin}/api/:path*`,
       },
       {
         source: "/images/:path*",
-        destination: "http://localhost:5000/images/:path*",
+        destination: `${backendOrigin}/images/:path*`,
       },
       {
         source: "/uploads/:path*",
-        destination: "http://localhost:5000/uploads/:path*",
+        destination: `${backendOrigin}/uploads/:path*`,
       },
     ];
   },

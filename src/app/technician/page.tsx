@@ -27,6 +27,7 @@ export default function TechnicianDashboard() {
     queryKey: ['technician-defects', user?.id],
     queryFn: () => fetch(`/api/defects?technicianId=${user?.id || ''}`).then((res) => res.json()),
     enabled: !!user?.id,
+    placeholderData: (previousData) => previousData,
   });
 
   const getPriorityBorderClass = (priority: string) => {

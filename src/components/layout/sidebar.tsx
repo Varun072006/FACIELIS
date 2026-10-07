@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/providers/auth-provider';
 import {
   LayoutDashboard,
@@ -33,7 +34,28 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, logout } = useAuth();
+
+  const handlePrefetch = useCallback((href: string) => {
+    try {
+      router.prefetch(href);
+      if (href.includes('/defects') || href.includes('/repair-approvals') || href.includes('/sla')) {
+        queryClient.prefetchQuery({ queryKey: ['defects'], queryFn: () => fetch('/api/defects').then(r => r.json()) });
+      } else if (href.includes('/audits') || href.includes('/audit-schedule') || href.includes('/history')) {
+        queryClient.prefetchQuery({ queryKey: ['audits'], queryFn: () => fetch('/api/audits').then(r => r.json()) });
+      } else if (href.includes('/assets')) {
+        queryClient.prefetchQuery({ queryKey: ['assets'], queryFn: () => fetch('/api/assets').then(r => r.json()) });
+      } else if (href.includes('/users')) {
+        queryClient.prefetchQuery({ queryKey: ['users'], queryFn: () => fetch('/api/users').then(r => r.json()) });
+      } else if (href.includes('/assignments')) {
+        queryClient.prefetchQuery({ queryKey: ['technicians'], queryFn: () => fetch('/api/users?role=TECHNICIAN').then(r => r.json()) });
+      } else if (href.includes('/certificates')) {
+        queryClient.prefetchQuery({ queryKey: ['certificates'], queryFn: () => fetch('/api/certificates').then(r => r.json()) });
+      }
+    } catch {}
+  }, [router, queryClient]);
 
   useEffect(() => {
     setMounted(true);
@@ -181,6 +203,7 @@ export function Sidebar() {
               key={link.href + link.label}
               href={link.href}
               prefetch={true}
+              onMouseEnter={() => handlePrefetch(link.href)}
               onClick={() => setMobileOpen(false)}
               title={isCollapsedMode ? link.label : undefined}
               className={`group flex items-center rounded-lg text-xs transition-all duration-100 ${

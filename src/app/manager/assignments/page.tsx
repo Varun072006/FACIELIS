@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { Card } from '@/components/ui/card';
@@ -13,18 +13,19 @@ export default function AssignmentsPage() {
   const [selectedDept, setSelectedDept] = useState<string>('ALL');
 
   const { data: technicians, isLoading } = useQuery({
-    queryKey: ['technicians-workload'],
+    queryKey: ['technicians'],
     queryFn: () => fetch('/api/users?role=TECHNICIAN').then((res) => res.json()),
+    placeholderData: (previousData) => previousData,
   });
 
-  const techList = Array.isArray(technicians) ? technicians : [];
+  const techList = useMemo(() => Array.isArray(technicians) ? technicians : [], [technicians]);
 
   // Extract unique departments for tabs
-  const departments = ['ALL', ...Array.from(new Set(techList.map((t: any) => t.department?.name).filter(Boolean)))];
+  const departments = useMemo(() => ['ALL', ...Array.from(new Set(techList.map((t: any) => t.department?.name).filter(Boolean)))], [techList]);
 
-  const filteredTechs = selectedDept === 'ALL'
+  const filteredTechs = useMemo(() => selectedDept === 'ALL'
     ? techList
-    : techList.filter((t: any) => t.department?.name === selectedDept);
+    : techList.filter((t: any) => t.department?.name === selectedDept), [techList, selectedDept]);
 
   return (
     <div className="space-y-6 pb-16">
