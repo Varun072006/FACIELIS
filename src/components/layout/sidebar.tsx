@@ -23,17 +23,33 @@ import {
   CheckSquare,
   Menu,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 export function Sidebar() {
   const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
   useEffect(() => {
     setMounted(true);
+    // Optional: read collapse preference from localStorage
+    try {
+      const saved = localStorage.getItem('facielis_sidebar_collapsed');
+      if (saved !== null) setCollapsed(saved === 'true');
+    } catch {}
   }, []);
+
+  const toggleCollapse = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem('facielis_sidebar_collapsed', String(next));
+    } catch {}
+  };
 
   // Close mobile drawer when route changes
   useEffect(() => {
@@ -96,19 +112,31 @@ export function Sidebar() {
   if (role === 'TECHNICIAN') navLinks = technicianLinks;
   if (role === 'OWNER') navLinks = ownerLinks;
 
-  const renderNavContent = () => (
-    <div className="flex flex-col h-full bg-white">
+  const renderNavContent = (isCollapsedMode = false) => (
+    <div className="flex flex-col h-full bg-white select-none">
       {/* Brand Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-bold text-lg shadow-sm">
+      <div className={`border-b border-gray-100 flex items-center justify-between ${isCollapsedMode ? 'p-4 justify-center' : 'p-5'}`}>
+        <div className={`flex items-center gap-2.5 ${isCollapsedMode ? 'justify-center' : ''}`}>
+          <div className="w-8 h-8 rounded-xl bg-[#173B72] text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0">
             F
           </div>
-          <div>
-            <h1 className="font-extrabold text-xl tracking-tight text-[#173B72]">FACIELIS</h1>
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">Facility Assurance</p>
-          </div>
+          {!isCollapsedMode && (
+            <div className="overflow-hidden transition-all duration-200">
+              <h1 className="font-black text-xl tracking-tight text-[#173B72] leading-none">FACIELIS</h1>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-0.5">Facility Assurance</p>
+            </div>
+          )}
         </div>
+
+        {/* Desktop Collapse Toggle (only in desktop sidebar) */}
+        <button
+          onClick={toggleCollapse}
+          className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          title={isCollapsedMode ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsedMode ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+
         {/* Mobile close button */}
         <button
           onClick={() => setMobileOpen(false)}
@@ -119,15 +147,24 @@ export function Sidebar() {
       </div>
 
       {/* Role Badge */}
-      <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-500 font-medium">Current Role:</span>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#173B72]/10 text-[#173B72]">
-          {role.replace('_', ' ')}
-        </span>
-      </div>
+      {!isCollapsedMode ? (
+        <div className="px-5 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+          <span className="text-xs text-gray-500 font-medium">Role:</span>
+          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-[#173B72]/10 text-[#173B72]">
+            {role.replace('_', ' ')}
+          </span>
+        </div>
+      ) : (
+        <div className="py-2 border-b border-gray-100 flex justify-center">
+          <span
+            className="w-2.5 h-2.5 rounded-full bg-[#173B72]"
+            title={`Role: ${role.replace('_', ' ')}`}
+          />
+        </div>
+      )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const rootPaths = ['/admin', '/manager', '/auditor', '/technician', '/owner'];
@@ -135,38 +172,66 @@ export function Sidebar() {
           const isActive = isRootPath
             ? pathname === link.href
             : pathname === link.href || pathname.startsWith(link.href + '/');
+
           return (
             <Link
               key={link.href + link.label}
               href={link.href}
               prefetch={true}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+              title={isCollapsedMode ? link.label : undefined}
+              className={`group flex items-center rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                isCollapsedMode ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'
+              } ${
                 isActive
-                  ? 'bg-[#173B72] text-white shadow-sm'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  ? 'border-l-4 border-l-[#173B72] bg-[#173B72]/10 text-[#173B72] font-bold shadow-2xs'
+                  : 'border-l-4 border-l-transparent text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-              <span>{link.label}</span>
+              <Icon
+                className={`w-4 h-4 shrink-0 transition-colors ${
+                  isActive ? 'text-[#173B72]' : 'text-gray-500 group-hover:text-gray-900'
+                }`}
+              />
+              {!isCollapsedMode && <span className="truncate">{link.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      {/* User Footer */}
-      <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between">
-        <div className="truncate pr-2">
-          <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
-          <p className="text-xs text-gray-500 truncate">{user.email}</p>
-        </div>
-        <button
-          onClick={logout}
-          title="Sign Out"
-          className="p-2 rounded-md hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-        </button>
+      {/* User Profile Footer */}
+      <div className={`border-t border-gray-100 bg-gray-50/60 flex items-center ${isCollapsedMode ? 'p-3 flex-col gap-2' : 'p-4 justify-between'}`}>
+        {!isCollapsedMode ? (
+          <>
+            <div className="truncate pr-2">
+              <p className="text-xs font-bold text-gray-900 truncate">{user.name}</p>
+              <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign Out"
+              className="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            <div
+              className="w-8 h-8 rounded-full bg-[#173B72] text-white flex items-center justify-center text-xs font-bold shadow-xs cursor-default"
+              title={`${user.name} (${user.email})`}
+            >
+              {user?.name ? user.name.charAt(0) : 'U'}
+            </div>
+            <button
+              onClick={logout}
+              title="Sign Out"
+              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -176,17 +241,17 @@ export function Sidebar() {
       {/* Mobile Top App Bar (visible on < lg screens) */}
       <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-bold text-base shadow-sm">
+          <div className="w-7 h-7 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-black text-base shadow-sm">
             F
           </div>
           <div>
-            <h1 className="font-extrabold text-base tracking-tight text-[#173B72]">FACIELIS</h1>
-            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-medium">Facility Assurance</p>
+            <h1 className="font-black text-base tracking-tight text-[#173B72]">FACIELIS</h1>
+            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Facility Assurance</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#173B72]/10 text-[#173B72]">
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#173B72]/10 text-[#173B72]">
             {role.replace('_', ' ')}
           </span>
           <button
@@ -194,14 +259,18 @@ export function Sidebar() {
             className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
             aria-label="Toggle Mobile Menu"
           >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>
 
-      {/* Desktop Sticky Sidebar (visible on >= lg screens) */}
-      <aside className="hidden lg:flex w-64 border-r border-gray-200 flex-col h-screen sticky top-0 z-30">
-        {renderNavContent()}
+      {/* Desktop Sticky Sidebar (visible on >= lg screens, collapsible w-20 / w-64) */}
+      <aside
+        className={`hidden lg:flex border-r border-gray-200 flex-col h-screen sticky top-0 z-30 transition-all duration-200 ease-in-out ${
+          collapsed ? 'w-20' : 'w-64'
+        }`}
+      >
+        {renderNavContent(collapsed)}
       </aside>
 
       {/* Mobile Drawer (visible on < lg screens when mobileOpen === true) */}
@@ -215,7 +284,7 @@ export function Sidebar() {
 
           {/* Drawer Sidebar Content */}
           <aside className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl z-10 flex flex-col">
-            {renderNavContent()}
+            {renderNavContent(false)}
           </aside>
         </div>
       )}

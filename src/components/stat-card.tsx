@@ -8,6 +8,8 @@ interface StatCardProps {
   icon: LucideIcon;
   trend?: string;
   variant?: 'default' | 'success' | 'warning' | 'critical';
+  sparkline?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function StatCard({
@@ -17,36 +19,42 @@ export function StatCard({
   icon: Icon,
   trend,
   variant = 'default',
+  sparkline,
+  children,
 }: StatCardProps) {
   const variantStyles = {
-    default: 'bg-white border-gray-200 text-gray-900',
-    success: 'bg-emerald-50/50 border-emerald-200 text-emerald-950',
-    warning: 'bg-amber-50/50 border-amber-200 text-amber-950',
-    critical: 'bg-red-50/50 border-red-200 text-red-950',
+    default: 'bg-white border-slate-200/80 text-slate-900',
+    success: 'bg-emerald-50/40 border-emerald-200 text-emerald-950',
+    warning: 'bg-amber-50/40 border-amber-200 text-amber-950',
+    critical: 'bg-red-50/40 border-red-200 text-red-950',
   };
 
   const iconStyles = {
-    default: 'bg-gray-100 text-[#173B72]',
+    default: 'bg-slate-100 text-[#173B72]',
     success: 'bg-emerald-100 text-emerald-700',
     warning: 'bg-amber-100 text-amber-700',
     critical: 'bg-red-100 text-red-700',
   };
 
   return (
-    <div className={`p-5 rounded-xl border ${variantStyles[variant]} shadow-xs flex flex-col justify-between transition-all hover:shadow-md`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{title}</p>
-          <h3 className="text-2xl font-extrabold mt-1 tracking-tight">{value}</h3>
+    <div className={`p-5 rounded-2xl border ${variantStyles[variant]} shadow-xs flex flex-col justify-between transition-all hover:shadow-md bg-white`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider truncate">{title}</p>
+          <div className="flex items-baseline gap-3 mt-1">
+            <h3 className="text-2xl font-black tracking-tight text-slate-900">{value}</h3>
+            {sparkline && <div className="flex-1 max-w-[110px] h-9">{sparkline}</div>}
+          </div>
         </div>
-        <div className={`p-2.5 rounded-lg ${iconStyles[variant]}`}>
+        <div className={`p-2.5 rounded-xl ${iconStyles[variant]} shrink-0 shadow-2xs`}>
           <Icon className="w-5 h-5" />
         </div>
       </div>
+      {children}
       {(subtitle || trend) && (
-        <div className="mt-3 flex items-center justify-between text-xs text-gray-500 border-t border-gray-100 pt-2">
-          <span>{subtitle}</span>
-          {trend && <span className="font-medium text-[#173B72]">{trend}</span>}
+        <div className="mt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2.5">
+          <span className="truncate">{subtitle}</span>
+          {trend && <span className="font-bold text-[#173B72] shrink-0 ml-1">{trend}</span>}
         </div>
       )}
     </div>

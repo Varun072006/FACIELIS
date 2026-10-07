@@ -1,128 +1,149 @@
-# 🏢 FACIELIS — Facility Assurance & Audit Platform
+# FACIELIS
 
-> **Where Facilities Earn Trust.** A modern, automated, and rule-driven system for managing, inspecting, and maintaining facility assets in real time.
+FACIELIS is a facility assurance platform for planning inspections, recording asset conditions, coordinating repairs, and keeping an auditable record of the work. It brings facility administrators, managers, auditors, technicians, and venue owners into one workflow.
 
----
-
-## 🌟 Introduction (For Everyone)
-
-**FACIELIS** is a smart digital assistant for managing physical spaces—like office floors, cabins, equipment, and electronics.
-
-Imagine you are running a large office campus. Instead of using paper checklists, sending emails about broken air conditioners, or guessing when repairs are finished, **FACIELIS** connects everyone together:
-
-- **Administrators** see the entire building layout, load standard reference images, upload assets, and manage integrity questions.
-- **Auditors** walk around the building, compare physical assets to standard reference images, mark items as **Good** or **Defective**, and submit audits instantly.
-- **Technicians** get instantly notified of broken items with original photo evidence, upload geo-tagged photo proof of their repair, and log coordinates.
-- **Managers** review repairs side-by-side, sign off on work, and automatically issue fitness certificates.
-
----
-
-## 🗺️ System Architecture & Workflow Diagrams
-
-### 1. The Core Lifecycle Loop
-
-The diagram below illustrates how a defect is identified during an audit, routed to the technician, repaired, signed off by the manager, and verified in subsequent audits.
+## How the workflow works
 
 ```mermaid
-graph TD
-    A[1. Auditor Inspects Venue] -->|Finds Defect| B[2. Rule Engine Assigns Dept & SLA]
-    B -->|Notify Technician| C[3. Technician Uploads Proof & GPS]
-    C -->|Submits Repair| D[4. Manager Compares Photos & Signs Off]
-    D -->|Approved| E[5. Auto-Issues Fitness Certificate]
-    D -->|Rejected| B
-    E -->|Next Audit| F[6. Auditor Re-verifies Asset Condition]
-    F -->|Inspection Complete| A
+flowchart TD
+    A[Administrator configures facilities, assets, rules, and users]
+    B[Manager schedules an audit and assigns an auditor]
+    C[Auditor inspects assets and records findings]
+    D{Defects found?}
+    E[Manager assigns defects to a department or technician]
+    F[Technician records repair work and submits evidence]
+    G[Auditor verifies the repair during a cross-audit]
+    H{Repair passes verification?}
+    I[Defect is verified and closed]
+    J[Defect is reopened for follow-up]
+    K[Manager reviews the completed audit]
+    L[Facility score and certificate are updated]
+    M[Owner reviews reports and can raise a concern]
+
+    A --> B --> C --> D
+    D -- Yes --> E --> F --> G --> H
+    H -- Yes --> I --> K
+    H -- No --> J --> E
+    D -- No --> K
+    K --> L --> M
+    M --> E
 ```
 
-### 2. Detailed Auditor & Integrity Verification Flow
+Administrators maintain the organization, campus and building hierarchy, venues, asset categories, reference images, departments, inspection rules, users, and verification questions. Managers coordinate audit schedules, assignments, service levels, defect follow-up, and review. Auditors inspect assets against their reference standards, record findings and evidence, complete integrity checks, and verify repairs. Technicians document repair work and submit it for verification. Venue owners can review their facility information, respond to questions, and report defects.
 
-To prevent fraudulent "desk audits", FACIELIS uses an integrity verification system requiring physical verification questions.
+Audits move through `IN_PROGRESS`, `PENDING_REVIEW`, and `COMPLETED`. Defects move through `OPEN`, `ASSIGNED`, and `REPAIRED_PENDING_CROSS` before they are either `VERIFIED` or `REOPENED`. Managers can review completed audit information and facility certificates are generated from audit results.
 
-```mermaid
-graph TD
-    Start[Start Venue Audit] --> Inspect[Inspect Assets & Sub-components]
-    Inspect --> DefaultPass[Defaults to GOOD for fast-testing]
-    Inspect --> DefectFail[Mark DEFECTIVE & Upload Photo]
-    DefectFail --> SubmitChecklist[Submit Inspection Checklist]
-    DefaultPass --> SubmitChecklist
-    SubmitChecklist --> IntegrityCheck[Integrity Verification Stage]
-    IntegrityCheck --> AnswerQ[Answer Random Venue Questions e.g. Count Tables/Fans]
-    IntegrityCheck --> Reverify[Verify Previous Repairs in Person]
-    AnswerQ --> CompleteAudit[Complete Audit & Compile Scores]
-    Reverify --> CompleteAudit
-```
+## Screenshots
 
----
+| Sign in | Cross-audit | Repair review |
+| --- | --- | --- |
+| ![FACIELIS sign-in screen](public/screenshots/login_page.png) | ![FACIELIS cross-audit screen](public/screenshots/cross_audit_page.png) | ![FACIELIS repair approval screen](public/screenshots/repair_approvals_page.png) |
 
-## 🚀 Key Features
+## Technology
 
-- **Visual Audit Standards**: High-resolution reference images for every single asset type (ACs, Printers, Routers, Fans, Chairs) to guide the auditor's inspection.
-- **Fast-Testing Auditor Mode**: Pre-filled defaults (all assets default to `GOOD`) with commented clicks validation, letting you test and submit 600+ component audits with one click.
-- **Smart Rule Engine**: Automatically assigns broken components to the correct department (e.g. electrical issues go to electricians) with SLAs and priorities.
-- **GPS & Time Logs**: Technician repairs are geo-tagged and timestamped to provide verifiable proof of work.
-- **Manager Repair Approvals**: Replaces old double-verification steps with a direct, single manager sign-off dashboard.
+- Next.js 15, React 19, and TypeScript
+- Express and Socket.IO for the API and real-time events
+- PostgreSQL with Prisma
+- Tailwind CSS
 
----
+## Run locally
 
-## 🛠️ How to Run the App (For Developers)
+### Requirements
 
-Follow these simple steps to run the application on your computer:
+- Node.js and npm
+- PostgreSQL
 
-### 1. Prerequisites
-
-Make sure you have [Node.js](https://nodejs.org/) installed.
-
-### 2. Install Dependencies
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Setup Database Config
+### 2. Configure PostgreSQL
 
-Ensure PostgreSQL is running, then verify the connection URL in the `.env` file:
+Create a PostgreSQL database for local development and add a `.env` file at the project root. `.env` is ignored by Git; do not commit database credentials.
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/facielis"
+DATABASE_URL="postgresql://postgres:<your-password>@localhost:5432/facielis?schema=public"
+JWT_SECRET="<a-long-random-secret>"
 ```
 
-### 4. Push Schema & Seed Data
+Change the username, password, host, port, or database name to match your PostgreSQL installation. If your password contains URI-reserved characters, URL-encode it in `DATABASE_URL`.
+
+On Windows, `scripts/setup-local.ps1` can create the `facielis` database, apply the schema, seed demo data, and start the app. The script expects PostgreSQL 18 at `C:\Program Files\PostgreSQL\18\bin` and PostgreSQL listening on port `2425`. Run it from PowerShell:
+
+```powershell
+.\scripts\setup-local.ps1
+```
+
+The script prompts for the PostgreSQL `postgres` user password. If your installation uses a different version or port, configure PostgreSQL accordingly or use the manual steps below.
+
+### 3. Apply the schema and add demo data
 
 ```bash
 npx prisma db push
 npx prisma db seed
 ```
 
-### 5. Run the Application
+**Seeding clears existing application records in the configured database before inserting demo data. Use a disposable local database; do not run the seed command against data you need to keep.**
 
-#### A. Run in Development Mode (Recommended)
-
-Compiles files on the fly and starts instantly:
+### 4. Start the application
 
 ```bash
 npm run dev
 ```
 
-Open **[http://localhost:3847](http://localhost:3847)** in your web browser.
+Open [http://localhost:3847](http://localhost:3847). The development command starts both the Next.js frontend on port `3847` and the Express API with Socket.IO on port `5000`.
 
-#### B. Build & Run in Production Mode
+To run either process separately, use two terminals:
 
 ```bash
-npm run build
-npm run start
+npm run server
 ```
 
-Open **[http://localhost:3847](http://localhost:3847)** in your web browser.
+```bash
+npx next dev --turbo -p 3847
+```
 
----
+The API health endpoint is [http://localhost:5000/api/health](http://localhost:5000/api/health). Set `PORT` to change the API port. If the API is hosted elsewhere, set `BACKEND_URL` for the Next.js API rewrite.
 
-## 👥 Demo Logins
+## Demo accounts
 
-Use these accounts to test each role in the application:
+After seeding, each account below uses the password `password123`.
 
-- **Super Admin**: `admin@facielis.com` / `password123`
-- **Facility Manager**: `manager@facielis.com` / `password123`
-- **Venue Owner (Dr. Ananth)**: `owner@facielis.com` / `password123`
-- **Auditor**: `auditor1@facielis.com` / `password123`
-- **Technician**: `tech.elec@facielis.com` / `password123`
+| Role | Email |
+| --- | --- |
+| Super administrator | `admin@facielis.com` |
+| Manager | `manager@facielis.com` |
+| Auditor | `auditor1@facielis.com` |
+| Technician | `tech.elec@facielis.com` |
+| Venue owner | `owner@facielis.com` |
 
+These accounts and passwords are for local evaluation only. Do not use them for a deployed environment.
+
+## Useful commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the frontend and API for local development |
+| `npm run server` | Start only the API and Socket.IO server |
+| `npm run build` | Build the Next.js application |
+| `npm run start` | Start the API and the production frontend |
+| `npm run db:push` | Apply the Prisma schema to the configured database |
+| `npm run db:seed` | Reset application records and load demo data |
+| `npm run db:studio` | Open Prisma Studio |
+
+For a production build, first configure a production PostgreSQL database, then run `npx prisma db push`, `npm run build`, and `npm run start`. Keep credentials and signing secrets in the deployment environment, not in source control. Do not run the demo seed command on a production database.
+
+## Project layout
+
+```text
+prisma/       Database schema and demo seed
+public/       Reference images, uploads, and screenshots
+scripts/      Local setup helpers
+src/app/      Next.js pages and role-specific portals
+src/components/ Shared interface components
+src/engines/  Facility rules, scoring, and certificate logic
+src/lib/      Database and authentication helpers
+src/server/  Express API, routes, and Socket.IO server
+```

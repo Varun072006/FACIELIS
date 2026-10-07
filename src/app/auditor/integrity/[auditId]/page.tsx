@@ -4,6 +4,8 @@ import React, { useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ShieldCheck, ArrowRight, HelpCircle } from 'lucide-react';
 
 export default function IntegrityQuestionsPage({ params }: { params: Promise<{ auditId: string }> }) {
@@ -55,64 +57,70 @@ export default function IntegrityQuestionsPage({ params }: { params: Promise<{ a
   };
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-6 pb-20 max-w-4xl mx-auto">
       <Navbar title="Audit Integrity Verification" />
 
       {/* Header Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-md space-y-2">
-        <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-wider text-blue-200">
-          Step 3 of 3: Integrity Questions
+      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-sm space-y-2 border border-[#173B72]">
+        <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-wider text-blue-200">
+          Step 2 of 2: Integrity Questions
         </span>
-        <h2 className="text-xl font-extrabold">Manual Physical Verification</h2>
-        <p className="text-xs text-blue-100 max-w-xl">
+        <h2 className="text-xl font-black">Manual Physical Verification</h2>
+        <p className="text-xs text-blue-100 max-w-xl leading-relaxed">
           To discourage fake inspections, please answer these physical verification questions regarding the venue you just audited.
         </p>
       </div>
 
       <div className="space-y-4">
         {questions.map((q: any) => (
-          <div key={q.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-3">
-            <h4 className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-[#173B72]" />
-              <span>{q.question}</span>
-            </h4>
+          <Card key={q.id}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-[#173B72] shrink-0" />
+                <span>{q.question}</span>
+              </CardTitle>
+            </CardHeader>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 text-xs">
-              {['A', 'B', 'C', 'D'].map((letter) => {
-                const optionText = q[`option${letter}`];
-                const isSelected = answers[q.id] === letter;
-                return (
-                  <button
-                    key={letter}
-                    type="button"
-                    onClick={() => handleSelectOption(q.id, letter)}
-                    className={`p-3 rounded-lg border text-left font-medium transition-all ${
-                      isSelected
-                        ? 'border-[#173B72] bg-blue-50 text-[#173B72] font-bold shadow-xs'
-                        : 'border-gray-200 hover:bg-gray-50 text-gray-700'
-                    }`}
-                  >
-                    <span className="font-bold mr-2">{letter})</span>
-                    <span>{optionText}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            <CardContent className="pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                {['A', 'B', 'C', 'D'].map((letter) => {
+                  const optionText = q[`option${letter}`];
+                  const isSelected = answers[q.id] === letter;
+                  return (
+                    <button
+                      key={letter}
+                      type="button"
+                      onClick={() => handleSelectOption(q.id, letter)}
+                      className={`p-3.5 rounded-xl border text-left font-medium transition-all min-h-[44px] flex items-center ${
+                        isSelected
+                          ? 'border-[#173B72] bg-blue-50/80 text-[#173B72] font-black shadow-xs ring-1 ring-[#173B72]'
+                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <span className="font-bold mr-2 text-slate-900">{letter})</span>
+                      <span>{optionText}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       {/* Complete Audit Button */}
-      <div className="flex justify-end">
-        <button
+      <div className="flex justify-end pt-2">
+        <Button
+          variant="success"
+          size="lg"
+          isLoading={submitting}
           onClick={submitIntegrity}
-          disabled={submitting}
-          className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-lg transition-all flex items-center gap-2"
+          rightIcon={<ArrowRight className="w-4 h-4" />}
         >
-          <span>{submitting ? 'Calculating Final Scores...' : 'Finish Audit & View Summary'}</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+          <span>Finish Audit & View Summary</span>
+        </Button>
       </div>
     </div>
   );
 }
+

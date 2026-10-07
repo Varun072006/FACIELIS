@@ -5,8 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
 import { PhotoCapture } from '@/components/photo-capture';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Toast } from '@/components/ui/toast';
 import { useAuth } from '@/providers/auth-provider';
-import { Wrench, ArrowRight } from 'lucide-react';
+import { Wrench, ArrowRight, AlertTriangle, MapPin, CheckCircle2 } from 'lucide-react';
 
 export default function RepairSubmissionPage({ params }: { params: Promise<{ defectId: string }> }) {
   const { defectId } = use(params);
@@ -18,6 +22,7 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
   const [lng, setLng] = useState<number | undefined>();
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const { data: defect, isLoading } = useQuery({
     queryKey: ['defect-detail', defectId],
@@ -26,8 +31,10 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
 
   const handleSubmitRepair = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!repairPhotoUrl || !remark) {
-      alert('Repair photo proof and remark are mandatory');
+    setErrorMessage('');
+
+    if (!repairPhotoUrl || !remark.trim()) {
+      setErrorMessage('Both a geo-tagged repair proof photo and descriptive technician remark are mandatory.');
       return;
     }
 
@@ -48,83 +55,133 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
 
       if (res.ok) {
         router.push('/technician');
+      } else {
+        const err = await res.json();
+        setErrorMessage(err.error || 'Failed to submit repair proof');
       }
-    } catch (err) {
-      console.error('Repair submission failed:', err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Repair submission failed');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (isLoading) return <div className="p-8 text-center text-xs text-gray-500">Loading defect details...</div>;
-  if (!defect) return <div className="p-8 text-center text-xs text-red-500">Defect not found</div>;
+  if (isLoading) {
+    return (
+      <div className="space-y-6 pb-20 max-w-2xl mx-auto">
+        <Navbar title="Loading Defect Details..." />
+        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (!defect) return <div className="p-8 text-center text-xs text-red-500">Defect ticket not found</div>;
 
   return (
     <div className="space-y-6 pb-20 max-w-2xl mx-auto">
       <Navbar title={`Submit Repair: ${defect.defectNo}`} />
 
+      {errorMessage && (
+        <Toast
+          variant="danger"
+          title="Submission Incomplete"
+          message={errorMessage}
+          onClose={() => setErrorMessage('')}
+        />
+      )}
+
       {/* Defect Overview */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-4">
-        <div className="border-b border-gray-100 pb-3">
-          <span className="font-mono font-bold text-xs text-amber-700">{defect.defectNo}</span>
-          <h3 className="font-extrabold text-lg text-gray-900">{defect.component?.name}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{defect.asset?.venue?.name} • {defect.asset?.name}</p>
-        </div>
-
-        <div className="p-3 bg-amber-50/50 rounded-lg border border-amber-200 text-xs space-y-1 text-amber-900">
-          <p><strong>Priority:</strong> {defect.priority} • <strong>Severity:</strong> {defect.severity}</p>
-          <p><strong>Auditor Remark:</strong> {defect.inspectionItem?.remark || 'Defect reported'}</p>
-        </div>
-
-        {defect.inspectionItem?.photoUrl && (
-          <div>
-            <p className="text-xs font-bold text-gray-700 mb-1">Auditor Original Photo Evidence:</p>
-            <img src={defect.inspectionItem.photoUrl} alt="Auditor Original Defect Evidence" className="w-full h-40 object-cover rounded-lg border" />
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <span className="font-mono font-bold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              {defect.defectNo}
+            </span>
+            <span className="font-bold text-[10px] uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+              {defect.priority} Priority
+            </span>
           </div>
-        )}
-      </div>
+          <CardTitle className="mt-1">{defect.component?.name}</CardTitle>
+          <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+            <MapPin className="w-3.5 h-3.5 text-[#173B72]" />
+            <span>{defect.asset?.venue?.name} • {defect.asset?.name}</span>
+          </p>
+        </CardHeader>
+
+        <CardContent className="space-y-4 pt-4">
+          <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/80 text-xs space-y-1.5 text-amber-950">
+            <p><strong>Category:</strong> {defect.category} • <strong>Severity:</strong> {defect.severity}</p>
+            <p><strong>Auditor Remark:</strong> "{defect.inspectionItem?.remark || 'Defect reported during inspection'}"</p>
+          </div>
+
+          {defect.inspectionItem?.photoUrl && (
+            <div>
+              <p className="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                Auditor Original Photo Evidence:
+              </p>
+              <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-2xs">
+                <img
+                  src={defect.inspectionItem.photoUrl}
+                  alt="Auditor Original Defect Evidence"
+                  className="w-full h-44 object-cover"
+                />
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Repair Form */}
-      <form onSubmit={handleSubmitRepair} className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs space-y-4">
-        <h4 className="font-bold text-sm text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
-          <Wrench className="w-4 h-4 text-[#173B72]" />
-          <span>Upload Geo-tagged Repair Evidence</span>
-        </h4>
+      <Card>
+        <form onSubmit={handleSubmitRepair}>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Wrench className="w-4 h-4 text-[#173B72]" />
+              <span>Upload Geo-tagged Repair Evidence</span>
+            </CardTitle>
+          </CardHeader>
 
-        <div>
-          <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-            Mandatory Technician Work Remark
-          </label>
-          <textarea
-            rows={3}
-            placeholder="Describe repair actions performed (e.g. Replaced faulty wiring, sealed socket enclosure, tested voltage)..."
-            value={remark}
-            onChange={(e) => setRemark(e.target.value)}
-            className="w-full p-2.5 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
-            required
-          />
-        </div>
+          <CardContent className="space-y-4 pt-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                Mandatory Technician Work Remark *
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Describe repair actions performed (e.g. Replaced faulty wiring, sealed socket enclosure, tested voltage and load)..."
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                className="w-full p-3 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#173B72] outline-hidden leading-relaxed"
+                required
+              />
+            </div>
 
-        <PhotoCapture
-          label="Capture Geo-tagged Repair Proof Photo"
-          onPhotoCaptured={(url, photoLat, photoLng) => {
-            setRepairPhotoUrl(url);
-            setLat(photoLat);
-            setLng(photoLng);
-          }}
-        />
+            <PhotoCapture
+              label="Capture Geo-tagged Repair Proof Photo *"
+              onPhotoCaptured={(url, photoLat, photoLng) => {
+                setRepairPhotoUrl(url);
+                setLat(photoLat);
+                setLng(photoLng);
+              }}
+            />
 
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 rounded-xl bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-          >
-            <span>{submitting ? 'Submitting Repair Proof...' : 'Submit Repair (Pending Approval)'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </form>
+            <div className="pt-2">
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                className="w-full"
+                isLoading={submitting}
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                <span>Submit Repair (Pending Manager Approval)</span>
+              </Button>
+            </div>
+          </CardContent>
+        </form>
+      </Card>
     </div>
   );
 }
+

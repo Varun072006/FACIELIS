@@ -3,18 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
+import { Card, CardHeader, CardTitle, CardContent, Button, Skeleton } from '@/components/ui';
 import { useAuth } from '@/providers/auth-provider';
 import {
   CheckSquare,
   Clock,
   CheckCircle2,
   AlertCircle,
-  HelpCircle,
   Save,
   Send,
   Sparkles,
   Info,
-  Building2,
+  Check,
+  AlertTriangle,
 } from 'lucide-react';
 
 export default function OwnerQuestionnairePage() {
@@ -23,7 +24,6 @@ export default function OwnerQuestionnairePage() {
 
   // Local state for answers: questionId -> { answer: 'YES'|'NO'|'PARTIAL', remark: string }
   const [answers, setAnswers] = useState<Record<string, { answer: string; remark: string }>>({});
-  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const { data: batch, isLoading } = useQuery({
@@ -64,9 +64,10 @@ export default function OwnerQuestionnairePage() {
       setMessage({
         text: variables.isFinal
           ? 'Questionnaire completed and submitted to Facility Manager successfully!'
-          : 'Progress saved successfully!',
+          : 'Draft progress saved successfully!',
         type: 'success',
       });
+      setTimeout(() => setMessage(null), 4000);
     },
     onError: (err: any) => {
       setMessage({ text: err.message || 'Failed to save responses', type: 'error' });
@@ -131,38 +132,42 @@ export default function OwnerQuestionnairePage() {
   });
 
   return (
-    <div className="space-y-6 pb-16">
+    <div className="space-y-6 pb-20">
       <Navbar title="15-Day Venue Owner Periodic Questionnaire" />
 
       {/* Header Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-md space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-400/20 pb-3">
+      <div className="bg-[#173B72] text-white p-6 sm:p-8 rounded-3xl shadow-md space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
           <div>
             <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 text-xs font-bold uppercase tracking-wider border border-emerald-400/30">
               Venue: {batch?.venue?.name || 'Right Cabin (Cabin 3)'}
             </span>
-            <h2 className="text-xl font-black mt-2">15-Day Periodic Self-Assessment Checklist</h2>
+            <h2 className="text-xl sm:text-2xl font-black mt-2 tracking-tight">
+              15-Day Periodic Self-Assessment Checklist
+            </h2>
           </div>
-          <div className="p-3 bg-white/10 rounded-xl border border-white/10 text-right self-start sm:self-auto">
-            <span className="text-[10px] text-blue-200 uppercase font-bold tracking-wider block">Validity Window Remaining</span>
-            <div className="text-base font-black text-amber-300 flex items-center gap-1.5 justify-end">
+          <div className="p-3 sm:p-4 bg-white/10 rounded-2xl border border-white/10 text-right self-start sm:self-auto shrink-0 backdrop-blur-xs">
+            <span className="text-[10px] text-blue-200 uppercase font-bold tracking-wider block">
+              Cycle Validity Remaining
+            </span>
+            <div className="text-base sm:text-lg font-black text-amber-300 flex items-center gap-1.5 justify-end mt-0.5">
               <Clock className="w-4 h-4" />
-              <span>{daysLeft} Days, {hoursLeft} Hours</span>
+              <span>{daysLeft}d {hoursLeft}h</span>
             </div>
           </div>
         </div>
 
-        <p className="text-xs text-blue-100 max-w-2xl">
-          Manager sends ~30 questions valid for 15 days. Complete answers before the deadline. Once the 15th day ends, unsubmitted questions are automatically submitted and a new dynamic batch arrives.
+        <p className="text-xs sm:text-sm text-blue-100/90 max-w-2xl leading-relaxed">
+          The Facility Manager issues ~30 periodic verification checks per 15-day window. Save draft progress at any time. When the cycle expires, answers are finalized and a new dynamic cycle commences.
         </p>
 
-        {/* Progress Bar */}
-        <div className="pt-2 space-y-1">
+        {/* Progress Bar Header */}
+        <div className="pt-2 space-y-1.5">
           <div className="flex justify-between text-xs font-extrabold text-blue-100">
-            <span>Completion Progress: {answeredCount} of {questions.length} Questions Answered</span>
-            <span>{progressPercent}%</span>
+            <span>Progress: {answeredCount} of {questions.length} Answered</span>
+            <span>{progressPercent}% Complete</span>
           </div>
-          <div className="w-full bg-white/20 h-2.5 rounded-full overflow-hidden">
+          <div className="w-full bg-white/20 h-3 rounded-full overflow-hidden p-0.5">
             <div
               className="bg-emerald-400 h-full transition-all duration-300 rounded-full"
               style={{ width: `${progressPercent}%` }}
@@ -173,47 +178,79 @@ export default function OwnerQuestionnairePage() {
 
       {/* Toast Feedback Message */}
       {message && (
-        <div className={`p-4 rounded-xl text-xs font-bold flex items-center justify-between shadow-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-          <div className="flex items-center gap-2">
-            {message.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+        <div
+          className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between shadow-sm transition-all animate-slide-in ${
+            message.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            {message.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+            )}
             <span>{message.text}</span>
           </div>
-          <button onClick={() => setMessage(null)} className="text-xs opacity-70 hover:opacity-100">✕</button>
+          <button
+            onClick={() => setMessage(null)}
+            className="text-xs font-black opacity-60 hover:opacity-100 p-1"
+          >
+            ✕
+          </button>
         </div>
       )}
 
       {/* Questions Form */}
       {isLoading ? (
-        <div className="p-8 text-center text-xs text-gray-500 bg-white rounded-xl border">Loading 15-day questionnaire...</div>
+        <div className="space-y-4">
+          <Skeleton className="h-44 rounded-2xl" />
+          <Skeleton className="h-44 rounded-2xl" />
+        </div>
+      ) : questions.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center text-xs text-gray-500">
+            No active questionnaire batch assigned for this venue cycle.
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-6">
           {Object.entries(categoriesMap).map(([category, qList]) => (
-            <div key={category} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs space-y-4">
-              <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
-                <h3 className="font-black text-sm text-gray-900 flex items-center gap-2">
+            <Card key={category} className="overflow-hidden">
+              <CardHeader className="border-b border-gray-100 bg-gray-50/50 p-4 sm:p-5 flex flex-row items-center justify-between">
+                <CardTitle className="font-black text-sm text-gray-900 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-[#173B72]" />
                   <span>{category} Category</span>
-                </h3>
-                <span className="text-xs text-gray-500 font-semibold">{qList.length} Questions</span>
-              </div>
+                </CardTitle>
+                <span className="text-xs font-bold text-gray-500 bg-gray-200/60 px-2.5 py-0.5 rounded-full">
+                  {qList.length} Questions
+                </span>
+              </CardHeader>
 
-              <div className="space-y-4 divide-y divide-gray-100">
+              <CardContent className="p-4 sm:p-6 space-y-6 divide-y divide-gray-100">
                 {qList.map((q: any, idx: number) => {
                   const currentObj = answers[q.id] || { answer: '', remark: '' };
 
                   return (
-                    <div key={q.id} className="pt-3 first:pt-0 space-y-3">
-                      <div className="flex items-start gap-2">
-                        <span className="w-6 h-6 rounded-full bg-blue-50 text-[#173B72] text-xs font-black flex items-center justify-center shrink-0 mt-0.5">
+                    <div key={q.id} className="pt-4 first:pt-0 space-y-3.5">
+                      <div className="flex items-start gap-3">
+                        <span className="w-6 h-6 rounded-full bg-blue-50 text-[#173B72] text-xs font-black flex items-center justify-center shrink-0 mt-0.5 border border-blue-200/50">
                           {idx + 1}
                         </span>
-                        <p className="text-xs font-bold text-gray-900 leading-relaxed">{q.question}</p>
+                        <p className="text-sm font-bold text-gray-900 leading-snug">{q.question}</p>
                       </div>
 
-                      {/* Options & Remarks */}
-                      <div className="pl-8 space-y-2">
-                        <div className="flex flex-wrap items-center gap-4 text-xs">
-                          <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all ${currentObj.answer === 'YES' ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-black shadow-2xs' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}>
+                      {/* Options & Remarks (Large touch targets >= 44px) */}
+                      <div className="pl-9 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                          <label
+                            className={`min-h-[44px] flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border cursor-pointer select-none transition-all ${
+                              currentObj.answer === 'YES'
+                                ? 'bg-emerald-50 border-emerald-500 text-emerald-900 font-extrabold shadow-2xs ring-1 ring-emerald-500'
+                                : 'bg-gray-50/80 border-gray-200 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
                             <input
                               type="radio"
                               name={`q_${q.id}`}
@@ -225,7 +262,13 @@ export default function OwnerQuestionnairePage() {
                             <span>YES — Fully Functional</span>
                           </label>
 
-                          <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all ${currentObj.answer === 'NO' ? 'bg-red-50 border-red-500 text-red-900 font-black shadow-2xs' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}>
+                          <label
+                            className={`min-h-[44px] flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border cursor-pointer select-none transition-all ${
+                              currentObj.answer === 'NO'
+                                ? 'bg-red-50 border-red-500 text-red-900 font-extrabold shadow-2xs ring-1 ring-red-500'
+                                : 'bg-gray-50/80 border-gray-200 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
                             <input
                               type="radio"
                               name={`q_${q.id}`}
@@ -237,7 +280,13 @@ export default function OwnerQuestionnairePage() {
                             <span>NO — Defective / Issue</span>
                           </label>
 
-                          <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer transition-all ${currentObj.answer === 'PARTIAL' ? 'bg-amber-50 border-amber-500 text-amber-900 font-black shadow-2xs' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'}`}>
+                          <label
+                            className={`min-h-[44px] flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border cursor-pointer select-none transition-all ${
+                              currentObj.answer === 'PARTIAL'
+                                ? 'bg-amber-50 border-amber-500 text-amber-900 font-extrabold shadow-2xs ring-1 ring-amber-500'
+                                : 'bg-gray-50/80 border-gray-200 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
                             <input
                               type="radio"
                               name={`q_${q.id}`}
@@ -250,48 +299,56 @@ export default function OwnerQuestionnairePage() {
                           </label>
                         </div>
 
-                        {/* Remark textarea */}
+                        {/* Remark input */}
                         <input
                           type="text"
-                          placeholder="Optional remark or details for venue manager..."
+                          placeholder="Optional observations or remark for facility manager..."
                           value={currentObj.remark}
                           onChange={(e) => handleRemarkChange(q.id, e.target.value)}
-                          className="w-full text-xs p-2 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                          className="w-full text-xs p-2.5 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#173B72] outline-hidden transition-colors"
                         />
                       </div>
                     </div>
                   );
                 })}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
 
-          {/* Fixed Action Footer */}
-          <div className="sticky bottom-4 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
+          {/* Fixed Action Bottom Bar */}
+          <div className="sticky bottom-4 bg-white/95 backdrop-blur-md rounded-2xl border border-gray-200 p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 z-20">
             <div className="text-xs text-gray-600 font-medium">
-              <span>Progress: <strong className="text-gray-900 font-black">{answeredCount}/{questions.length}</strong> questions answered.</span>
+              <span>
+                Progress:{' '}
+                <strong className="text-gray-900 font-black">
+                  {answeredCount}/{questions.length}
+                </strong>{' '}
+                questions answered.
+              </span>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button
-                type="button"
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <Button
+                variant="outline"
                 onClick={handleSaveDraft}
                 disabled={respondMutation.isPending}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-gray-300 hover:bg-gray-100 text-gray-800 font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto text-xs"
               >
-                <Save className="w-4 h-4" />
-                <span>Save Draft Progress</span>
-              </button>
+                <Save className="w-4 h-4 mr-1.5" />
+                <span>Save Draft</span>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant="primary"
                 onClick={handleFinalSubmit}
                 disabled={respondMutation.isPending || answeredCount === 0}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md"
               >
-                <Send className="w-4 h-4" />
-                <span>{respondMutation.isPending ? 'Submitting...' : 'Final Submit Questionnaire'}</span>
-              </button>
+                <Send className="w-4 h-4 mr-1.5" />
+                <span>
+                  {respondMutation.isPending ? 'Submitting...' : 'Final Submit Questionnaire'}
+                </span>
+              </Button>
             </div>
           </div>
         </div>

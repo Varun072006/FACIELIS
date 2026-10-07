@@ -350,57 +350,51 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
         </div>
       )}
 
-      {/* Header Banner & Stats */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-wider text-blue-200">
-                Audit No: {audit?.auditNo}
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[10px] font-extrabold uppercase text-emerald-300">
-                Live Enterprise Checklist
-              </span>
+      {/* Persistent Sticky Progress Header for Field Walkthrough */}
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border border-slate-200/80 rounded-2xl p-4 shadow-sm space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="font-mono font-black text-xs text-[#173B72] bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+              {audit?.auditNo}
+            </span>
+            <div>
+              <h3 className="font-black text-sm text-slate-900 leading-tight">{audit?.venue?.name}</h3>
+              <p className="text-[11px] text-slate-500">BIT-Sathy • Learning Center</p>
             </div>
-            <h2 className="text-2xl font-black mt-2 tracking-tight">{audit?.venue?.name}</h2>
-            <p className="text-xs text-blue-100 mt-1">
-              Bannari Amman Institute of Technology (BIT-Sathy) • Learning Center 4th Floor
-            </p>
           </div>
 
-          <button
-            onClick={handleSubmitAudit}
-            disabled={submitting}
-            className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-500 text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2"
-          >
-            <span>{submitting ? 'Submitting Audit...' : 'Submit Audit Checklist'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-3 text-xs">
+              <span className="text-slate-600 font-medium">Evaluated: <strong className="text-slate-900">{checkedCount}/{totalComponents}</strong></span>
+              <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Good: {goodCount}</span>
+              {defectiveCount > 0 && (
+                <span className="text-red-700 font-bold bg-red-50 px-2 py-0.5 rounded-full border border-red-200">Defects: {defectiveCount}</span>
+              )}
+            </div>
 
-        {/* Progress Bar */}
-        <div className="mt-6 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-          <div>
-            <span className="text-blue-200 font-medium">Total Components:</span>
-            <p className="text-lg font-black text-white">{totalComponents}</p>
-          </div>
-          <div>
-            <span className="text-blue-200 font-medium">Evaluated:</span>
-            <p className="text-lg font-black text-emerald-300">{checkedCount} / {totalComponents}</p>
-          </div>
-          <div>
-            <span className="text-emerald-300 font-medium">Good (Pass):</span>
-            <p className="text-lg font-black text-emerald-400">{goodCount}</p>
-          </div>
-          <div>
-            <span className="text-red-300 font-medium">Defective (Fail):</span>
-            <p className="text-lg font-black text-red-400">{defectiveCount}</p>
+            <button
+              onClick={handleSubmitAudit}
+              disabled={submitting}
+              className="px-4 sm:px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white font-black text-xs shadow-sm transition-all flex items-center justify-center gap-2 min-h-[44px]"
+            >
+              <span>{submitting ? 'Submitting...' : 'Submit Checklist'}</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        {/* Visual Progress Bar */}
-        <div className="w-full bg-white/10 rounded-full h-2 mt-3 overflow-hidden">
-          <div className="bg-emerald-400 h-full transition-all duration-300" style={{ width: `${progressPercent}%` }}></div>
+        {/* Persistent Progress Bar */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
+            <span>Inspection Completion</span>
+            <span className="text-emerald-700 font-bold">{progressPercent}%</span>
+          </div>
+          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
+            <div
+              className="bg-emerald-500 h-full transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
       </div>
 
@@ -504,15 +498,15 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
                         <p className="text-[11px] font-mono text-gray-400 mt-0.5">{comp.code}</p>
                       </div>
 
-                      {/* GOOD / DEFECTIVE Radio Buttons */}
+                      {/* GOOD / DEFECTIVE Large Touch Target Buttons */}
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleStatusChange(comp.id, 'GOOD')}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                          className={`min-h-[44px] min-w-[105px] px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border active:scale-95 select-none ${
                             isGood
-                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50 hover:border-emerald-300'
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-white text-slate-700 border-slate-300 hover:bg-emerald-50 hover:border-emerald-300'
                           }`}
                         >
                           <CheckCircle2 className="w-4 h-4" />
@@ -522,10 +516,10 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
                         <button
                           type="button"
                           onClick={() => handleStatusChange(comp.id, 'DEFECTIVE')}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+                          className={`min-h-[44px] min-w-[105px] px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 border active:scale-95 select-none ${
                             isDefective
-                              ? 'bg-red-600 text-white border-red-600 shadow-xs'
-                              : 'bg-white text-gray-700 border-gray-300 hover:bg-red-50 hover:border-red-300'
+                              ? 'bg-red-600 text-white border-red-600 shadow-sm'
+                              : 'bg-white text-slate-700 border-slate-300 hover:bg-red-50 hover:border-red-300'
                           }`}
                         >
                           <XCircle className="w-4 h-4" />
@@ -602,10 +596,10 @@ export default function AuditInspectionPage({ params }: { params: Promise<{ audi
         title="Scan Asset Serial Barcode / QR Code"
       />
 
-      {/* View Good Reference Image Modal */}
+      {/* View Good Reference Image Modal (Bottom-sheet on mobile, centered modal on desktop) */}
       {refModal && currentRefGuide && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-3xl w-full max-h-[92vh] sm:max-h-[88vh] overflow-y-auto shadow-2xl border border-slate-200/80 animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95">
             {/* Modal Header */}
             <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-emerald-50/50">
               <div>
