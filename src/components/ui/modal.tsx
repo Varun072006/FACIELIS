@@ -64,15 +64,15 @@ export function Modal({
     : 'items-center';
 
   const modalClasses = isBottomSheetOnMobile
-    ? 'rounded-t-3xl sm:rounded-2xl max-h-[90vh] sm:max-h-[85vh]'
-    : 'rounded-2xl max-h-[90vh]';
+    ? 'rounded-t-2xl sm:rounded-xl max-h-[90vh] sm:max-h-[85vh]'
+    : 'rounded-xl max-h-[90vh]';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity duration-150"
         aria-hidden="true"
       />
 
@@ -81,14 +81,14 @@ export function Modal({
         <div
           role="dialog"
           aria-modal="true"
-          className={`relative w-full ${maxWidthStyles[maxWidth]} bg-white text-left shadow-2xl transition-all flex flex-col border border-slate-200/80 overflow-hidden ${modalClasses} ${className}`}
+          className={`relative w-full ${maxWidthStyles[maxWidth]} bg-white text-left shadow-xl transition-all flex flex-col border border-slate-200 overflow-hidden ${modalClasses} ${className}`}
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-4 shrink-0 bg-white">
-              <div>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-3 shrink-0 bg-white">
+              <div className="min-w-0 pr-2">
                 {title && (
-                  <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                  <h3 className="text-base font-bold text-slate-900 tracking-tight">
                     {title}
                   </h3>
                 )}
@@ -100,10 +100,10 @@ export function Modal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 -mr-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
                   aria-label="Close dialog"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>

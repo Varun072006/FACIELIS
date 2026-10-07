@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toast } from '@/components/ui/toast';
 import { useAuth } from '@/providers/auth-provider';
-import { Wrench, ArrowRight, AlertTriangle, MapPin, CheckCircle2 } from 'lucide-react';
+import { Wrench, ArrowRight, MapPin, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export default function RepairSubmissionPage({ params }: { params: Promise<{ defectId: string }> }) {
   const { defectId } = use(params);
@@ -68,18 +69,18 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
 
   if (isLoading) {
     return (
-      <div className="space-y-6 pb-20 max-w-2xl mx-auto">
+      <div className="space-y-5 pb-20 max-w-2xl mx-auto">
         <Navbar title="Loading Defect Details..." />
-        <Skeleton className="h-44 w-full rounded-2xl" />
-        <Skeleton className="h-64 w-full rounded-2xl" />
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
 
-  if (!defect) return <div className="p-8 text-center text-xs text-red-500">Defect ticket not found</div>;
+  if (!defect) return <div className="p-8 text-center text-xs text-rose-500">Defect ticket not found</div>;
 
   return (
-    <div className="space-y-6 pb-20 max-w-2xl mx-auto">
+    <div className="space-y-5 pb-20 max-w-2xl mx-auto">
       <Navbar title={`Submit Repair: ${defect.defectNo}`} />
 
       {errorMessage && (
@@ -91,9 +92,20 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
         />
       )}
 
-      {/* Defect Overview */}
+      {/* Top Navigation */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/technician"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>Back to Assigned Jobs</span>
+        </Link>
+      </div>
+
+      {/* Defect Overview Card */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="p-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <span className="font-mono font-bold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
               {defect.defectNo}
@@ -102,29 +114,29 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
               {defect.priority} Priority
             </span>
           </div>
-          <CardTitle className="mt-1">{defect.component?.name}</CardTitle>
+          <CardTitle className="mt-1 text-base">{defect.component?.name}</CardTitle>
           <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
             <MapPin className="w-3.5 h-3.5 text-[#173B72]" />
             <span>{defect.asset?.venue?.name} • {defect.asset?.name}</span>
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-4 pt-4">
-          <div className="p-3.5 bg-amber-50/70 rounded-xl border border-amber-200/80 text-xs space-y-1.5 text-amber-950">
+        <CardContent className="p-4 space-y-3.5">
+          <div className="p-3 bg-amber-50/70 rounded-lg border border-amber-200/80 text-xs space-y-1 text-amber-950">
             <p><strong>Category:</strong> {defect.category} • <strong>Severity:</strong> {defect.severity}</p>
             <p><strong>Auditor Remark:</strong> "{defect.inspectionItem?.remark || 'Defect reported during inspection'}"</p>
           </div>
 
           {defect.inspectionItem?.photoUrl && (
             <div>
-              <p className="text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                Auditor Original Photo Evidence:
+              <p className="text-[11px] font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
+                Auditor Photo Evidence
               </p>
-              <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-2xs">
+              <div className="rounded-lg overflow-hidden border border-slate-200 bg-slate-900 shadow-2xs">
                 <img
                   src={defect.inspectionItem.photoUrl}
                   alt="Auditor Original Defect Evidence"
-                  className="w-full h-44 object-cover"
+                  className="w-full h-40 object-cover"
                 />
               </div>
             </div>
@@ -132,27 +144,27 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
         </CardContent>
       </Card>
 
-      {/* Repair Form */}
+      {/* Repair Submission Form Card */}
       <Card>
         <form onSubmit={handleSubmitRepair}>
-          <CardHeader className="pb-3">
+          <CardHeader className="p-4 border-b border-slate-100">
             <CardTitle className="text-sm flex items-center gap-2">
               <Wrench className="w-4 h-4 text-[#173B72]" />
               <span>Upload Geo-tagged Repair Evidence</span>
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-4 pt-4">
+          <CardContent className="p-4 space-y-3.5">
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+              <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
                 Mandatory Technician Work Remark *
               </label>
               <textarea
                 rows={3}
-                placeholder="Describe repair actions performed (e.g. Replaced faulty wiring, sealed socket enclosure, tested voltage and load)..."
+                placeholder="Describe physical repair actions performed (e.g. Replaced faulty wiring, sealed socket enclosure, tested voltage and load)..."
                 value={remark}
                 onChange={(e) => setRemark(e.target.value)}
-                className="w-full p-3 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#173B72] outline-hidden leading-relaxed"
+                className="w-full p-2.5 text-xs rounded-lg border border-slate-300 focus:ring-1 focus:ring-[#173B72] focus:border-[#173B72] outline-hidden text-slate-900"
                 required
               />
             </div>
@@ -170,12 +182,12 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
               <Button
                 type="submit"
                 variant="primary"
-                size="lg"
+                size="md"
                 className="w-full"
                 isLoading={submitting}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                <span>Submit Repair (Pending Manager Approval)</span>
+                Submit Repair (Pending Manager Approval)
               </Button>
             </div>
           </CardContent>
@@ -184,4 +196,3 @@ export default function RepairSubmissionPage({ params }: { params: Promise<{ def
     </div>
   );
 }
-

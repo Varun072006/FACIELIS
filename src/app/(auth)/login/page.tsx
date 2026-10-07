@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/providers/auth-provider';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { ArrowRight, Lock, Mail, ShieldCheck, UserCheck, Wrench, ClipboardList, KeyRound } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -79,36 +79,42 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden">
-        {/* Header Banner */}
-        <div className="bg-[#173B72] p-8 text-white text-center relative overflow-hidden">
-          <div className="w-12 h-12 rounded-xl bg-white/10 text-white mx-auto flex items-center justify-center font-black text-2xl mb-3 shadow-inner">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-xl border border-slate-200/90 shadow-xl overflow-hidden">
+        {/* Brand Header */}
+        <div className="bg-[#173B72] px-6 py-7 text-white text-center relative overflow-hidden">
+          <div className="w-10 h-10 rounded-lg bg-white/10 text-white mx-auto flex items-center justify-center font-bold text-lg mb-2.5 shadow-2xs">
             F
           </div>
-          <h1 className="text-2xl font-black tracking-tight">FACIELIS</h1>
-          <p className="text-xs text-blue-200 uppercase tracking-widest font-semibold mt-1">Facility Assurance Platform</p>
-          <p className="text-xs text-blue-100/80 font-serif italic mt-2">"Where Facilities Earn Trust"</p>
+          <h1 className="text-xl font-bold tracking-tight">FACIELIS</h1>
+          <p className="text-[10px] text-blue-200 uppercase tracking-widest font-semibold mt-0.5">
+            Facility Assurance Platform
+          </p>
+          <p className="text-xs text-blue-100/80 italic mt-1.5">
+            "Where Facilities Earn Trust"
+          </p>
         </div>
 
         {/* Form Body */}
-        <div className="p-8">
+        <div className="p-6 sm:p-7">
           {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+            <div className="mb-4 p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs font-medium text-rose-700">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleFormLogin} className="space-y-4">
+          <form onSubmit={handleFormLogin} className="space-y-3.5">
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Email Address</label>
+              <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Email Address
+              </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-[#173B72] focus:border-transparent outline-hidden"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-900 focus:ring-1 focus:ring-[#173B72] focus:border-[#173B72] outline-hidden transition-all"
                   placeholder="name@facielis.com"
                   required
                 />
@@ -116,14 +122,16 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Password</label>
+              <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                Password
+              </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-[#173B72] focus:border-transparent outline-hidden"
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-300 text-xs text-slate-900 focus:ring-1 focus:ring-[#173B72] focus:border-[#173B72] outline-hidden transition-all"
                   placeholder="••••••••"
                   required
                 />
@@ -133,16 +141,18 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 rounded-lg bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 group"
+              className="w-full py-2.5 rounded-lg bg-[#173B72] hover:bg-[#1e4a8e] text-white font-semibold text-xs transition-all shadow-2xs hover:shadow-xs flex items-center justify-center gap-1.5 group disabled:opacity-50"
             >
               <span>{submitting ? 'Authenticating...' : 'Sign In to Portal'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </form>
 
-          {/* Role Quick Selector */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-xs text-gray-400 font-semibold uppercase text-center mb-3">1-Click Demo Login</p>
+          {/* Quick Demo Selector */}
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider text-center mb-2.5">
+              1-Click Demo Login
+            </p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -150,9 +160,10 @@ export default function LoginPage() {
                   setEmail('admin@facielis.com');
                   handleLoginWithEmail('admin@facielis.com');
                 }}
-                className="px-3 py-2.5 rounded-lg border border-gray-200 hover:border-[#173B72] hover:bg-[#173B72]/10 text-xs font-bold text-[#173B72] transition-all shadow-2xs text-center"
+                className="px-2.5 py-2 rounded-lg border border-slate-200 hover:border-[#173B72] hover:bg-slate-50 text-xs font-semibold text-slate-800 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Super Admin
+                <ShieldCheck className="w-3.5 h-3.5 text-[#173B72]" />
+                <span>Super Admin</span>
               </button>
               <button
                 type="button"
@@ -160,9 +171,10 @@ export default function LoginPage() {
                   setEmail('manager@facielis.com');
                   handleLoginWithEmail('manager@facielis.com');
                 }}
-                className="px-3 py-2.5 rounded-lg border border-gray-200 hover:border-[#173B72] hover:bg-[#173B72]/10 text-xs font-bold text-[#173B72] transition-all shadow-2xs text-center"
+                className="px-2.5 py-2 rounded-lg border border-slate-200 hover:border-[#173B72] hover:bg-slate-50 text-xs font-semibold text-slate-800 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Facility Manager
+                <UserCheck className="w-3.5 h-3.5 text-blue-700" />
+                <span>Facility Manager</span>
               </button>
               <button
                 type="button"
@@ -170,9 +182,10 @@ export default function LoginPage() {
                   setEmail('owner@facielis.com');
                   handleLoginWithEmail('owner@facielis.com');
                 }}
-                className="col-span-2 px-3 py-2.5 rounded-lg border-2 border-emerald-600 bg-emerald-50 hover:bg-emerald-100 text-xs font-black text-emerald-900 transition-all shadow-sm text-center flex items-center justify-center gap-1.5"
+                className="col-span-2 px-2.5 py-2 rounded-lg border border-emerald-300 bg-emerald-50/70 hover:bg-emerald-100/80 text-xs font-bold text-emerald-900 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                <span>🔑 Venue Owner (Dr. Ananth)</span>
+                <KeyRound className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Venue Owner (Dr. Ananth)</span>
               </button>
               <button
                 type="button"
@@ -180,9 +193,10 @@ export default function LoginPage() {
                   setEmail('auditor1@facielis.com');
                   handleLoginWithEmail('auditor1@facielis.com');
                 }}
-                className="px-3 py-2.5 rounded-lg border border-gray-200 hover:border-[#173B72] hover:bg-[#173B72]/10 text-xs font-bold text-[#173B72] transition-all shadow-2xs text-center"
+                className="px-2.5 py-2 rounded-lg border border-slate-200 hover:border-[#173B72] hover:bg-slate-50 text-xs font-semibold text-slate-800 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Auditor (Ramesh)
+                <ClipboardList className="w-3.5 h-3.5 text-indigo-700" />
+                <span>Auditor (Ramesh)</span>
               </button>
               <button
                 type="button"
@@ -190,17 +204,20 @@ export default function LoginPage() {
                   setEmail('tech.elec@facielis.com');
                   handleLoginWithEmail('tech.elec@facielis.com');
                 }}
-                className="px-3 py-2.5 rounded-lg border border-gray-200 hover:border-[#173B72] hover:bg-[#173B72]/10 text-xs font-bold text-[#173B72] transition-all shadow-2xs text-center"
+                className="px-2.5 py-2 rounded-lg border border-slate-200 hover:border-[#173B72] hover:bg-slate-50 text-xs font-semibold text-slate-800 transition-all text-center flex items-center justify-center gap-1.5"
               >
-                Technician (Selvam)
+                <Wrench className="w-3.5 h-3.5 text-amber-700" />
+                <span>Technician (Selvam)</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 p-4 border-t border-gray-100 text-center">
-          <p className="text-[11px] text-gray-400 font-medium">Bannari Amman Institute of Technology (BIT-Sathy)</p>
+        <div className="bg-slate-50 px-4 py-3 border-t border-slate-100 text-center">
+          <p className="text-[10px] text-slate-400 font-medium">
+            Bannari Amman Institute of Technology (BIT-Sathy)
+          </p>
         </div>
       </div>
     </div>

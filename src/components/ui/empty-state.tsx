@@ -18,18 +18,18 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`bg-white rounded-2xl border border-slate-200/80 p-8 sm:p-12 text-center flex flex-col items-center justify-center space-y-3 ${className}`}
+      className={`bg-white rounded-xl border border-dashed border-slate-200 p-8 sm:p-10 text-center flex flex-col items-center justify-center space-y-2.5 ${className}`}
     >
-      <div className="w-12 h-12 rounded-2xl bg-slate-100 border border-slate-200/60 flex items-center justify-center text-slate-500 shadow-2xs">
-        <Icon className="w-6 h-6" />
+      <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-center text-slate-500 shadow-2xs">
+        <Icon className="w-5 h-5 text-slate-500" />
       </div>
-      <div className="max-w-md space-y-1">
-        <h4 className="font-extrabold text-sm sm:text-base text-slate-900">{title}</h4>
+      <div className="max-w-sm space-y-0.5">
+        <h4 className="font-bold text-sm text-slate-900">{title}</h4>
         {description && (
           <p className="text-xs text-slate-500 leading-relaxed">{description}</p>
         )}
       </div>
-      {action && <div className="pt-2">{action}</div>}
+      {action && <div className="pt-1.5">{action}</div>}
     </div>
   );
 }

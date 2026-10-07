@@ -4,14 +4,37 @@ import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatCard } from '@/components/stat-card';
 import { StatusBadge } from '@/components/status-badge';
-import { ClipboardList, AlertTriangle, ShieldCheck, Wrench, Award, Plus, ArrowUpRight, CheckSquare } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  ClipboardList,
+  AlertTriangle,
+  ShieldCheck,
+  Award,
+  Plus,
+  ArrowUpRight,
+  CheckSquare,
+  Wrench,
+  BarChart3,
+  Clock,
+} from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line } from 'recharts';
 import Link from 'next/link';
 
 export default function ManagerDashboard() {
-  const { data: audits } = useQuery({ queryKey: ['audits'], queryFn: () => fetch('/api/audits').then((res) => res.json()) });
-  const { data: defects } = useQuery({ queryKey: ['defects'], queryFn: () => fetch('/api/defects').then((res) => res.json()) });
-  const { data: certs } = useQuery({ queryKey: ['certificates'], queryFn: () => fetch('/api/certificates').then((res) => res.json()) });
+  const { data: audits, isLoading: auditsLoading } = useQuery({
+    queryKey: ['audits'],
+    queryFn: () => fetch('/api/audits').then((res) => res.json()),
+  });
+  const { data: defects, isLoading: defectsLoading } = useQuery({
+    queryKey: ['defects'],
+    queryFn: () => fetch('/api/defects').then((res) => res.json()),
+  });
+  const { data: certs, isLoading: certsLoading } = useQuery({
+    queryKey: ['certificates'],
+    queryFn: () => fetch('/api/certificates').then((res) => res.json()),
+  });
+
+  const isLoading = auditsLoading || defectsLoading || certsLoading;
 
   const activeAudits = Array.isArray(audits) ? audits.length : 0;
   const pendingReviewAudits = Array.isArray(audits) ? audits.filter((a: any) => a.status === 'PENDING_REVIEW').length : 0;
@@ -19,7 +42,6 @@ export default function ManagerDashboard() {
   const pendingCrossDefects = Array.isArray(defects) ? defects.filter((d: any) => d.status === 'REPAIRED_PENDING_CROSS').length : 0;
   const overdueDefects = Array.isArray(defects) ? defects.filter((d: any) => d.isOverdue).length : 0;
 
-  // TODO: Backend follow-up: replace client-aggregated trend points with dedicated time-series metrics endpoint
   const auditSparkData = [
     { v: Math.max(1, pendingReviewAudits - 2) },
     { v: Math.max(2, pendingReviewAudits) },
@@ -48,121 +70,150 @@ export default function ManagerDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
-      <Navbar title="Facility Operations Manager — Control Center" />
+    <div className="space-y-5">
+      <Navbar title="Operations Manager Command Center" />
 
-      {/* Action Banner */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      {/* Action Strip */}
+      <div className="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
         <div>
-          <h2 className="text-xl font-black text-gray-900">Operational Manager Command Center</h2>
-          <p className="text-xs text-gray-500 mt-1">Schedule audits, analyze score breakdowns, approve technician assignments, track defect resolution, and sign off facility certificates.</p>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Facility Operations
+            </span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 mt-0.5">
+            Operations Manager Command Center
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5 max-w-xl">
+            Schedule audits, analyze score breakdowns, approve technician assignments, track defect resolution, and sign off facility certificates.
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {pendingReviewAudits > 0 && (
             <Link
               href="/manager/audit-schedule"
-              className="px-4 py-2.5 rounded-xl bg-amber-500 text-gray-900 font-extrabold text-xs hover:bg-amber-400 transition-all shadow-md flex items-center gap-1.5 animate-pulse"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition-colors"
             >
-              <CheckSquare className="w-4 h-4" />
-              <span>{pendingReviewAudits} Audits Awaiting Approval</span>
+              <CheckSquare className="w-3.5 h-3.5 text-amber-700" />
+              <span>{pendingReviewAudits} Awaiting Approval</span>
             </Link>
           )}
           <Link
             href="/manager/audit-schedule"
-            className="px-4 py-2.5 rounded-xl bg-[#173B72] text-white font-bold text-xs hover:bg-[#1e4a8e] transition-all shadow-md flex items-center gap-2"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#173B72] hover:bg-[#1e4a8e] text-white text-xs font-semibold shadow-2xs hover:shadow-xs transition-all"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Schedule New Audit</span>
           </Link>
         </div>
       </div>
 
-      {/* KPI Cards with Recharts Sparklines */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Audits Pending Approval"
-          value={pendingReviewAudits}
-          subtitle="Manager Sign-off Needed"
-          icon={ClipboardList}
-          variant={pendingReviewAudits > 0 ? 'warning' : 'default'}
-          sparkline={
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={auditSparkData}>
-                <Line type="monotone" dataKey="v" stroke="#d97706" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          }
-        />
-        <StatCard
-          title="Active Defects"
-          value={pendingDefects}
-          subtitle={`${overdueDefects} Overdue SLA`}
-          icon={AlertTriangle}
-          variant={overdueDefects > 0 ? 'critical' : 'warning'}
-          sparkline={
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={defectSparkData}>
-                <Line type="monotone" dataKey="v" stroke="#dc2626" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          }
-        />
-        <StatCard
-          title="Pending Repair Sign-offs"
-          value={pendingCrossDefects}
-          subtitle="Field Repairs Ready"
-          icon={ShieldCheck}
-          variant="default"
-          sparkline={
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={repairSparkData}>
-                <Line type="monotone" dataKey="v" stroke="#173b72" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          }
-        />
-        <StatCard
-          title="Fitness Certificates"
-          value={Array.isArray(certs) ? certs.length : 0}
-          subtitle="Issued & Validated"
-          icon={Award}
-          variant="success"
-          sparkline={
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={certSparkData}>
-                <Line type="monotone" dataKey="v" stroke="#059669" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          }
-        />
+      {/* Bento KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {isLoading ? (
+          <>
+            <Skeleton variant="card" />
+            <Skeleton variant="card" />
+            <Skeleton variant="card" />
+            <Skeleton variant="card" />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Audits Pending Approval"
+              value={pendingReviewAudits}
+              subtitle="Manager Sign-off Needed"
+              icon={ClipboardList}
+              variant={pendingReviewAudits > 0 ? 'warning' : 'default'}
+              sparkline={
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={auditSparkData}>
+                    <Line type="monotone" dataKey="v" stroke="#d97706" strokeWidth={1.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              }
+            />
+            <StatCard
+              title="Active Defects"
+              value={pendingDefects}
+              subtitle={`${overdueDefects} Overdue SLA`}
+              icon={AlertTriangle}
+              variant={overdueDefects > 0 ? 'critical' : 'warning'}
+              sparkline={
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={defectSparkData}>
+                    <Line type="monotone" dataKey="v" stroke="#dc2626" strokeWidth={1.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              }
+            />
+            <StatCard
+              title="Pending Repair Sign-offs"
+              value={pendingCrossDefects}
+              subtitle="Field Repairs Ready"
+              icon={ShieldCheck}
+              variant="default"
+              sparkline={
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={repairSparkData}>
+                    <Line type="monotone" dataKey="v" stroke="#173b72" strokeWidth={1.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              }
+            />
+            <StatCard
+              title="Fitness Certificates"
+              value={Array.isArray(certs) ? certs.length : 0}
+              subtitle="Issued & Validated"
+              icon={Award}
+              variant="success"
+              sparkline={
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={certSparkData}>
+                    <Line type="monotone" dataKey="v" stroke="#059669" strokeWidth={1.5} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              }
+            />
+          </>
+        )}
       </div>
 
-      {/* Quick Action Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Scheduled & Pending Audits */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h3 className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
+      {/* Bento Main Grid: 2 Columns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Left Bento: Audits & Approval Queue */}
+        <div className="bento-card p-5 space-y-3.5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
               <ClipboardList className="w-4 h-4 text-[#173B72]" />
-              <span>Audits & Approval Queue</span>
-            </h3>
-            <Link href="/manager/audit-schedule" className="text-xs font-bold text-[#173B72] hover:underline">View All & Approve</Link>
+              <h3 className="font-bold text-sm text-slate-900">Audits & Approval Queue</h3>
+            </div>
+            <Link
+              href="/manager/audit-schedule"
+              className="text-xs font-semibold text-[#173B72] hover:text-[#1e4a8e] flex items-center gap-1"
+            >
+              <span>View All</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           {Array.isArray(audits) && audits.length > 0 ? (
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2">
               {audits.slice(0, 4).map((audit: any) => (
-                <div key={audit.id} className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex items-center justify-between">
-                  <div>
-                    <span className="font-mono font-bold text-[#173B72]">{audit.auditNo}</span>
-                    <p className="font-semibold text-gray-900">{audit.venue?.name}</p>
-                    <p className="text-[10px] text-gray-500">Auditor: {audit.auditor?.name}</p>
+                <div
+                  key={audit.id}
+                  className="p-3 rounded-lg border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="min-w-0">
+                    <span className="font-mono font-bold text-xs text-[#173B72]">{audit.auditNo}</span>
+                    <p className="font-semibold text-slate-900 truncate mt-0.5">{audit.venue?.name}</p>
+                    <p className="text-[11px] text-slate-500 truncate">Auditor: {audit.auditor?.name}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={audit.status} />
                     <Link
                       href="/manager/audit-schedule"
-                      className="text-[10px] font-bold text-[#173B72] bg-blue-50 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                      className="text-[11px] font-semibold text-[#173B72] bg-white border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50 transition-colors"
                     >
                       {audit.status === 'PENDING_REVIEW' ? 'Review & Approve' : 'View'}
                     </Link>
@@ -171,34 +222,45 @@ export default function ManagerDashboard() {
               ))}
             </div>
           ) : (
-            <div className="p-4 text-center text-xs text-gray-400">No scheduled audits found.</div>
+            <div className="p-6 text-center text-xs text-slate-400">No scheduled audits found.</div>
           )}
         </div>
 
-        {/* Recent Defects & Lifecycle Tracking */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-3">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h3 className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
+        {/* Right Bento: Defects Lifecycle & Routing Queue */}
+        <div className="bento-card p-5 space-y-3.5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
-              <span>Defects Lifecycle & Routing Queue</span>
-            </h3>
-            <Link href="/manager/defects" className="text-xs font-bold text-[#173B72] hover:underline">Defect Tracker</Link>
+              <h3 className="font-bold text-sm text-slate-900">Defect Triage & Routing Queue</h3>
+            </div>
+            <Link
+              href="/manager/defects"
+              className="text-xs font-semibold text-[#173B72] hover:text-[#1e4a8e] flex items-center gap-1"
+            >
+              <span>Track All</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
           {Array.isArray(defects) && defects.length > 0 ? (
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2">
               {defects.slice(0, 4).map((defect: any) => (
-                <div key={defect.id} className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex items-center justify-between">
-                  <div>
-                    <span className="font-mono font-bold text-amber-700">{defect.defectNo}</span>
-                    <p className="font-semibold text-gray-900">{defect.component?.name}</p>
-                    <p className="text-[10px] text-gray-500">Dept: {defect.department?.name} • Priority: {defect.priority}</p>
+                <div
+                  key={defect.id}
+                  className="p-3 rounded-lg border border-slate-100 bg-slate-50/60 hover:bg-slate-50 transition-colors flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="min-w-0">
+                    <span className="font-mono font-bold text-xs text-slate-700">{defect.defectNo}</span>
+                    <p className="font-semibold text-slate-900 truncate mt-0.5">{defect.component?.name}</p>
+                    <p className="text-[11px] text-slate-500 truncate">
+                      {defect.department?.name || 'General'} • Priority: {defect.priority}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={defect.status} />
                     <Link
                       href="/manager/defects"
-                      className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-1 rounded hover:bg-amber-100 transition-colors"
+                      className="text-[11px] font-semibold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-md hover:bg-slate-50 transition-colors"
                     >
                       Track
                     </Link>
@@ -207,9 +269,49 @@ export default function ManagerDashboard() {
               ))}
             </div>
           ) : (
-            <div className="p-4 text-center text-xs text-gray-400">No active defects.</div>
+            <div className="p-6 text-center text-xs text-slate-400">No active defects.</div>
           )}
         </div>
+      </div>
+
+      {/* Operational Quick Launch Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Link
+          href="/manager/assignments"
+          className="bento-card p-3 flex items-center gap-2.5 hover:border-[#173B72] transition-colors text-xs font-semibold text-slate-800"
+        >
+          <div className="p-1.5 rounded-md bg-indigo-50 text-indigo-700">
+            <Wrench className="w-3.5 h-3.5" />
+          </div>
+          <span>Technician Assignments</span>
+        </Link>
+        <Link
+          href="/manager/repair-approvals"
+          className="bento-card p-3 flex items-center gap-2.5 hover:border-[#173B72] transition-colors text-xs font-semibold text-slate-800"
+        >
+          <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-700">
+            <CheckSquare className="w-3.5 h-3.5" />
+          </div>
+          <span>Repair Approvals</span>
+        </Link>
+        <Link
+          href="/manager/sla"
+          className="bento-card p-3 flex items-center gap-2.5 hover:border-[#173B72] transition-colors text-xs font-semibold text-slate-800"
+        >
+          <div className="p-1.5 rounded-md bg-rose-50 text-rose-700">
+            <Clock className="w-3.5 h-3.5" />
+          </div>
+          <span>SLA Monitor</span>
+        </Link>
+        <Link
+          href="/manager/reports"
+          className="bento-card p-3 flex items-center gap-2.5 hover:border-[#173B72] transition-colors text-xs font-semibold text-slate-800"
+        >
+          <div className="p-1.5 rounded-md bg-sky-50 text-sky-700">
+            <BarChart3 className="w-3.5 h-3.5" />
+          </div>
+          <span>Facility Analytics</span>
+        </Link>
       </div>
     </div>
   );

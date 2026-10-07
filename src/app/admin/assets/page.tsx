@@ -5,6 +5,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
 import { PhotoCapture } from '@/components/photo-capture';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import { Boxes, Search, ChevronDown, ChevronRight, Layers, ChevronLeft, Plus, X, Upload, CheckCircle2, ShieldCheck, Image as ImageIcon } from 'lucide-react';
 
 const ITEMS_PER_PAGE = 15;
@@ -103,53 +111,56 @@ export default function AssetsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
       <Navbar title="Asset & Component Inventory (BIT-Sathy Pilot)" />
 
-      {/* Action Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-[#173B72]/10 text-[#173B72]">
-            <Boxes className="w-5 h-5" />
+      {/* Header Banner */}
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+              Equipment Catalog
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-semibold text-slate-500">Asset & Component Registry</span>
           </div>
-          <div>
-            <h2 className="font-extrabold text-base text-gray-900">Registered Venue Assets & Reference Standards</h2>
-            <p className="text-xs text-gray-500">Learning Center 4th Floor Right Cabin • {filteredAssets.length} Assets Registered</p>
-          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Registered Assets & Reference Standards</h1>
+          <p className="text-xs text-slate-500 mt-1 max-w-xl">
+            Learning Center 4th Floor Right Cabin • {filteredAssets.length} Assets Registered
+          </p>
         </div>
 
-        {/* Upload / Add Asset Button */}
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2.5 rounded-xl bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold text-xs shadow-md transition-all flex items-center gap-2"
+          className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white font-semibold text-xs shadow-2xs transition-colors flex items-center gap-1.5 shrink-0"
         >
-          <Plus className="w-4 h-4" />
-          <span>Upload / Add New Asset</span>
+          <Plus className="w-3.5 h-3.5" />
+          <span>Add New Asset</span>
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search by asset name or serial no..."
             value={search}
             onChange={handleSearchChange}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden transition-all"
+            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-1 focus:ring-primary focus:border-primary outline-hidden transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {['ALL', 'DOOR', 'WIN_SLIDING', 'TAB_4S', 'TAB_2S', 'CHAIR', 'COMP', 'AC', 'FAN', 'LIGHT', 'PRINTER'].map((cat) => (
             <button
               key={cat}
               onClick={() => handleFilterChange(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all ${
                 selectedCat === cat
-                  ? 'bg-[#173B72] text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-[#173B72] text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
               {cat}
@@ -159,26 +170,26 @@ export default function AssetsPage() {
       </div>
 
       {/* Asset Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-xs text-gray-500">Loading asset inventory...</div>
+          <div className="p-12 text-center text-xs text-slate-400">Loading asset inventory...</div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider">
-                    <th className="p-3 w-8"></th>
-                    <th className="p-3 w-16">Standard</th>
-                    <th className="p-3">Serial No</th>
-                    <th className="p-3">Asset Name</th>
-                    <th className="p-3">Category</th>
-                    <th className="p-3">Venue</th>
-                    <th className="p-3">Belonging Components</th>
-                    <th className="p-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/75 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    <TableHead className="py-2.5 w-8"></TableHead>
+                    <TableHead className="py-2.5 w-14">Standard</TableHead>
+                    <TableHead className="py-2.5">Serial No</TableHead>
+                    <TableHead className="py-2.5">Asset Name</TableHead>
+                    <TableHead className="py-2.5">Category</TableHead>
+                    <TableHead className="py-2.5">Venue</TableHead>
+                    <TableHead className="py-2.5">Belonging Components</TableHead>
+                    <TableHead className="py-2.5">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {paginatedAssets.map((asset: any) => {
                     const isExpanded = expandedAssetId === asset.id;
                     const catCode = asset.assetCategory?.code || 'ASSET';
@@ -186,46 +197,46 @@ export default function AssetsPage() {
 
                     return (
                       <Fragment key={asset.id}>
-                        <tr
+                        <TableRow
                           onClick={() => setExpandedAssetId(isExpanded ? null : asset.id)}
-                          className="hover:bg-blue-50/20 cursor-pointer transition-colors"
+                          className="hover:bg-slate-50/60 cursor-pointer transition-colors text-xs"
                         >
-                          <td className="p-3 text-center text-gray-400">
-                            {isExpanded ? <ChevronDown className="w-4 h-4 text-[#173B72]" /> : <ChevronRight className="w-4 h-4" />}
-                          </td>
-                          <td className="p-3">
-                            <div className="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 bg-gray-900 shrink-0">
+                          <TableCell className="text-center text-slate-400">
+                            {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-primary" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 bg-slate-900 shrink-0">
                               <img src={refImg} alt={asset.name} className="w-full h-full object-cover" />
                             </div>
-                          </td>
-                          <td className="p-3 font-mono font-bold text-[#173B72]">{asset.serialNo}</td>
-                          <td className="p-3 font-bold text-gray-900">{asset.name}</td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 font-medium">
+                          </TableCell>
+                          <TableCell className="font-mono font-bold text-primary">{asset.serialNo}</TableCell>
+                          <TableCell className="font-semibold text-slate-900">{asset.name}</TableCell>
+                          <TableCell>
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium">
                               {asset.assetCategory?.name}
                             </span>
-                          </td>
-                          <td className="p-3 text-gray-600">{asset.venue?.name || 'Right Cabin'}</td>
-                          <td className="p-3 font-bold text-gray-700">{asset.components?.length || 0} Components</td>
-                          <td className="p-3">
+                          </TableCell>
+                          <TableCell className="text-slate-600 font-medium">{asset.venue?.name || 'Right Cabin'}</TableCell>
+                          <TableCell className="font-semibold text-slate-700">{asset.components?.length || 0} Components</TableCell>
+                          <TableCell>
                             <StatusBadge status={asset.status} />
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
 
                         {/* Component Expansion */}
                         {isExpanded && (
-                          <tr className="bg-gray-50/70">
-                            <td colSpan={8} className="p-4 pl-12 border-t border-b border-gray-200">
-                              <div className="flex flex-col sm:flex-row items-start justify-between gap-4 mb-3">
+                          <TableRow className="bg-slate-50/60 hover:bg-slate-50/60">
+                            <TableCell colSpan={8} className="p-4 pl-10 border-t border-b border-slate-200/80">
+                              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-3">
                                 <div>
-                                  <h4 className="font-bold text-xs text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                                    <Layers className="w-3.5 h-3.5 text-[#173B72]" />
-                                    Belonging Sub-components for {asset.name}:
+                                  <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Layers className="w-3.5 h-3.5 text-primary" />
+                                    <span>Belonging Sub-components for {asset.name}:</span>
                                   </h4>
-                                  <p className="text-[11px] text-gray-500 mt-0.5">Asset Code: {asset.serialNo} • Category: {asset.assetCategory?.name}</p>
+                                  <p className="text-[11px] text-slate-500 mt-0.5">Asset Code: {asset.serialNo} • Category: {asset.assetCategory?.name}</p>
                                 </div>
 
-                                <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-800 text-[11px] font-bold">
+                                <div className="flex items-center gap-1.5 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 text-emerald-800 text-[10px] font-bold">
                                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                                   <span>Verified Quality Standard Attached</span>
                                 </div>
@@ -233,40 +244,40 @@ export default function AssetsPage() {
 
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                                 {asset.components?.map((c: any) => (
-                                  <div key={c.id} className="p-2.5 bg-white rounded-lg border border-gray-200 text-xs flex items-center justify-between shadow-2xs">
-                                    <span className="font-semibold text-gray-800">{c.name}</span>
-                                    <span className="text-[10px] font-mono text-gray-400">{c.code.split('-CMP-')[1] ? `CMP-${c.code.split('-CMP-')[1]}` : c.code}</span>
+                                  <div key={c.id} className="p-2 bg-white rounded-md border border-slate-200 text-xs flex items-center justify-between shadow-2xs">
+                                    <span className="font-medium text-slate-800">{c.name}</span>
+                                    <span className="text-[10px] font-mono text-slate-400">{c.code.split('-CMP-')[1] ? `CMP-${c.code.split('-CMP-')[1]}` : c.code}</span>
                                   </div>
                                 ))}
                               </div>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         )}
                       </Fragment>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Pagination Controls */}
-            <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <span className="text-xs text-gray-500">
-                Page <span className="font-bold text-gray-900">{currentPage}</span> of{' '}
-                <span className="font-bold text-gray-900">{totalPages}</span>
+            <div className="p-3.5 border-t border-slate-100 flex items-center justify-between bg-slate-50/40">
+              <span className="text-xs text-slate-500">
+                Page <span className="font-bold text-slate-900">{currentPage}</span> of{' '}
+                <span className="font-bold text-slate-900">{totalPages}</span>
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
+                  className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-medium hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" /> Previous
+                  <ChevronLeft className="w-3.5 h-3.5" /> Prev
                 </button>
                 <button
                   disabled={currentPage >= totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-all"
+                  className="px-2.5 py-1 rounded-md border border-slate-200 text-xs font-medium hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
                 >
                   Next <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -278,51 +289,51 @@ export default function AssetsPage() {
 
       {/* Add / Upload New Asset Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200 animate-in fade-in zoom-in-95">
-            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-[#173B72] text-white rounded-t-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl border border-slate-200">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-[#173B72] text-white rounded-t-2xl">
               <div className="flex items-center gap-2">
-                <Plus className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-base font-extrabold">Upload / Add New Asset</h3>
+                <Plus className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-bold">Upload / Add New Asset</h3>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1 rounded-full hover:bg-white/20 text-white transition-colors"
+                className="p-1 rounded-md hover:bg-white/10 text-white transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddAsset} className="p-6 space-y-4 text-xs">
+            <form onSubmit={handleAddAsset} className="p-5 space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-gray-700 uppercase mb-1">Asset Name *</label>
+                <label className="block font-medium text-slate-700 mb-1">Asset Name *</label>
                 <input
                   type="text"
                   placeholder="e.g. Laser Printer 02 or 4-Seater Table 11"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                  className="w-full p-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-primary focus:border-primary outline-hidden text-xs"
                   required
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 uppercase mb-1">Serial Number (Optional)</label>
+                <label className="block font-medium text-slate-700 mb-1">Serial Number (Optional)</label>
                 <input
                   type="text"
                   placeholder="Auto-generated if empty (e.g. LC4FRC-COMP-021)"
                   value={serialNo}
                   onChange={(e) => setSerialNo(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-gray-300 font-mono focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                  className="w-full p-2 rounded-lg border border-slate-300 font-mono focus:ring-1 focus:ring-primary focus:border-primary outline-hidden text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 uppercase mb-1">Asset Category *</label>
+                <label className="block font-medium text-slate-700 mb-1">Asset Category *</label>
                 <select
                   value={categoryCode}
                   onChange={(e) => setCategoryCode(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden bg-white font-semibold"
+                  className="w-full p-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-primary focus:border-primary outline-hidden bg-white text-xs font-medium"
                 >
                   <option value="DOOR">Entry Door</option>
                   <option value="WIN_SLIDING">Sliding Glass Window</option>
@@ -343,13 +354,13 @@ export default function AssetsPage() {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-700 uppercase mb-1">Belonging Sub-components (Comma Separated)</label>
+                <label className="block font-medium text-slate-700 mb-1">Belonging Sub-components (Comma Separated)</label>
                 <textarea
                   rows={2}
                   placeholder="e.g. Monitor Screen, CPU Tower, Optical Mouse, Mechanical Keyboard"
                   value={componentsInput}
                   onChange={(e) => setComponentsInput(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                  className="w-full p-2 rounded-lg border border-slate-300 focus:ring-1 focus:ring-primary focus:border-primary outline-hidden text-xs"
                 />
               </div>
 
@@ -360,21 +371,21 @@ export default function AssetsPage() {
                 />
               </div>
 
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-300 font-bold text-gray-600 hover:bg-gray-100"
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-300 font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 rounded-xl bg-[#173B72] text-white font-black hover:bg-[#1e4a8e] transition-all flex items-center gap-1.5"
+                  className="px-4 py-1.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-hover transition-colors flex items-center gap-1.5"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>{submitting ? 'Creating Asset...' : 'Save & Register Asset'}</span>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{submitting ? 'Creating Asset...' : 'Save & Register'}</span>
                 </button>
               </div>
             </form>

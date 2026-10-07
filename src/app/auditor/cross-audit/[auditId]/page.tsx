@@ -4,7 +4,10 @@ import React, { useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/navbar';
-import { CheckCircle2, XCircle, ArrowRight, Wrench } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
+import { CheckCircle2, XCircle, ArrowRight, Wrench, ShieldCheck, Check } from 'lucide-react';
 
 export default function CrossAuditPage({ params }: { params: Promise<{ auditId: string }> }) {
   const { auditId } = use(params);
@@ -61,90 +64,131 @@ export default function CrossAuditPage({ params }: { params: Promise<{ auditId: 
     }
   };
 
-  if (loadingAudit || loadingCross) return <div className="p-8 text-center text-xs text-gray-500">Loading cross-audit verification...</div>;
+  if (loadingAudit || loadingCross) {
+    return (
+      <div className="space-y-5 pb-20 max-w-4xl mx-auto">
+        <Navbar title="Cross-Audit Validation Station" />
+        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+      </div>
+    );
+  }
 
   const repairedItems = crossItems?.repairedItemsToVerify || [];
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-5 pb-20 max-w-4xl mx-auto">
       <Navbar title="Cross-Audit Validation Station" />
 
-      {/* Header Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-md space-y-2">
-        <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-wider text-blue-200">
-          Step 2 of 3: Cross-Audit Verification
-        </span>
-        <h2 className="text-xl font-extrabold">Validate Previously Repaired Items</h2>
-        <p className="text-xs text-blue-100 max-w-xl">
-          The system automatically displays items previously repaired by technicians in this venue. Verify if repairs are effective or reopen defects for rework.
-        </p>
+      {/* Step Header Banner */}
+      <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 text-[#173B72] border border-blue-200/80 text-[11px] font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-700" />
+              Step 2 of 3: Cross-Audit Verification
+            </span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 mt-1">
+            Validate Previously Repaired Items
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5 max-w-xl">
+            Items previously repaired by technicians in this venue. Verify if physical repairs are effective or reopen defects for rework.
+          </p>
+        </div>
+
+        <div className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 shrink-0">
+          <span>{repairedItems.length} Items to Verify</span>
+        </div>
       </div>
 
       {repairedItems.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-3.5">
           {repairedItems.map((defect: any) => {
             const currentVal = verifications[defect.id]?.verified ?? true;
             return (
-              <div key={defect.id} className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div key={defect.id} className="bento-card p-4 sm:p-5 space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
-                    <span className="font-mono font-bold text-xs text-blue-700">{defect.defectNo}</span>
-                    <h4 className="font-bold text-sm text-gray-900">{defect.component?.name} ({defect.asset?.name})</h4>
+                    <span className="font-mono font-bold text-xs text-[#173B72]">{defect.defectNo}</span>
+                    <h4 className="font-bold text-sm text-slate-900 mt-0.5">
+                      {defect.component?.name} ({defect.asset?.name})
+                    </h4>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-blue-50 text-blue-800 text-xs font-bold border border-blue-200 flex items-center gap-1">
-                    <Wrench className="w-3.5 h-3.5" />
+                  <span className="px-2 py-0.5 rounded-md bg-blue-50 text-[#173B72] text-[11px] font-semibold border border-blue-200/80 flex items-center gap-1">
+                    <Wrench className="w-3 h-3" />
                     <span>Repaired by {defect.repair?.technician?.name || 'Technician'}</span>
                   </span>
                 </div>
 
-                {/* Evidence Comparison */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Original Defect Photo */}
+                {/* Evidence Comparison Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-gray-500 uppercase">Original Defect Photo</p>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Original Defect Photo
+                    </p>
                     {defect.inspectionItem?.photoUrl ? (
-                      <img src={defect.inspectionItem.photoUrl} alt="Original Defect" className="w-full h-36 object-cover rounded-lg border" />
+                      <div className="h-36 rounded-lg overflow-hidden border border-slate-200 bg-slate-900">
+                        <img
+                          src={defect.inspectionItem.photoUrl}
+                          alt="Original Defect"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     ) : (
-                      <div className="h-36 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-400">No Photo</div>
+                      <div className="h-36 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-xs text-slate-400">
+                        No Photo
+                      </div>
                     )}
                   </div>
 
-                  {/* Technician Repair Proof */}
                   <div className="space-y-1">
-                    <p className="text-[11px] font-bold text-gray-500 uppercase">Technician Repair Proof</p>
+                    <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Technician Repair Proof
+                    </p>
                     {defect.repair?.repairProofPhotoUrl ? (
-                      <img src={defect.repair.repairProofPhotoUrl} alt="Technician Repair Proof" className="w-full h-36 object-cover rounded-lg border border-emerald-300" />
+                      <div className="h-36 rounded-lg overflow-hidden border border-emerald-300 bg-slate-900">
+                        <img
+                          src={defect.repair.repairProofPhotoUrl}
+                          alt="Technician Repair Proof"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     ) : (
-                      <div className="h-36 bg-emerald-50 rounded-lg flex items-center justify-center text-xs text-emerald-700">Proof Submitted</div>
+                      <div className="h-36 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-center text-xs text-emerald-700">
+                        Proof Submitted
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Verification Actions */}
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-700">Is the repair effective?</span>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700">Is this repair effective?</span>
                   <div className="flex items-center gap-2">
                     <button
+                      type="button"
                       onClick={() => handleVerify(defect.id, true)}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                         currentVal
-                          ? 'bg-emerald-600 text-white shadow-xs'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-emerald-600 text-white shadow-2xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 border border-slate-200'
                       }`}
                     >
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>Verified Good</span>
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => handleVerify(defect.id, false)}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors ${
                         !currentVal
-                          ? 'bg-red-600 text-white shadow-xs'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-rose-600 text-white shadow-2xs'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 border border-slate-200'
                       }`}
                     >
-                      <XCircle className="w-4 h-4" />
+                      <XCircle className="w-3.5 h-3.5" />
                       <span>Reopen Defect</span>
                     </button>
                   </div>
@@ -154,21 +198,24 @@ export default function CrossAuditPage({ params }: { params: Promise<{ auditId: 
           })}
         </div>
       ) : (
-        <div className="bg-white p-8 rounded-xl border text-center text-xs text-gray-500">
-          No pending repaired items requiring cross-audit validation in this venue.
-        </div>
+        <EmptyState
+          icon={CheckCircle2}
+          title="No Repaired Items Requiring Cross-Audit"
+          description="There are currently no technician repairs awaiting cross-audit verification in this venue."
+        />
       )}
 
       {/* Next Step Button */}
-      <div className="flex justify-end">
-        <button
+      <div className="flex justify-end pt-2">
+        <Button
+          variant="primary"
+          size="md"
           onClick={submitCrossAudit}
-          disabled={submitting}
-          className="px-6 py-3 rounded-xl bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold text-xs shadow-lg transition-all flex items-center gap-2"
+          isLoading={submitting}
+          rightIcon={<ArrowRight className="w-4 h-4" />}
         >
-          <span>{submitting ? 'Submitting...' : 'Proceed to Integrity Questions'}</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+          Proceed to Integrity Questions
+        </Button>
       </div>
     </div>
   );

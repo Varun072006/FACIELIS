@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -18,6 +17,9 @@ import {
   Eye,
   Columns,
   RotateCw,
+  Clock,
+  User,
+  Building,
 } from 'lucide-react';
 
 interface PhotoComparisonProps {
@@ -45,17 +47,17 @@ function PhotoComparison({
     <div className="space-y-3">
       {/* Controls Bar */}
       <div className="flex items-center justify-between gap-2 text-xs">
-        <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-          Photo Evidence Inspection
+        <span className="font-semibold text-slate-700 uppercase tracking-wider text-[11px]">
+          Resolution Verification
         </span>
 
-        <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+        <div className="inline-flex rounded-lg bg-slate-100 p-0.5 border border-slate-200">
           <button
             type="button"
             onClick={() => setViewMode('slider')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${
               viewMode === 'slider'
-                ? 'bg-white text-[#173B72] shadow-2xs'
+                ? 'bg-white text-primary shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -66,22 +68,22 @@ function PhotoComparison({
           <button
             type="button"
             onClick={() => setViewMode('flip')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${
               viewMode === 'flip'
-                ? 'bg-white text-[#173B72] shadow-2xs'
+                ? 'bg-white text-primary shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <RotateCw className="w-3 h-3" />
-            <span>Tap to Flip</span>
+            <span>Flip</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode('split')}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all flex items-center gap-1 ${
               viewMode === 'split'
-                ? 'bg-white text-[#173B72] shadow-2xs'
+                ? 'bg-white text-primary shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -94,18 +96,16 @@ function PhotoComparison({
       {/* Mode 1: Interactive Slider */}
       {viewMode === 'slider' && (
         <div className="space-y-2">
-          <div className="relative w-full h-64 sm:h-72 rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 select-none shadow-xs">
-            {/* After (Repaired) Image on bottom */}
+          <div className="relative w-full h-64 sm:h-72 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 select-none shadow-xs">
             {afterUrl ? (
               <img src={afterUrl} alt="Technician Repair Proof" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-xs">No repair photo</div>
             )}
-            <div className="absolute bottom-3 right-3 bg-emerald-600 text-white font-bold text-[10px] px-2.5 py-1 rounded-md shadow-md z-10">
+            <div className="absolute bottom-3 right-3 bg-emerald-600 text-white font-semibold text-[10px] px-2.5 py-1 rounded-md shadow-md z-10">
               AFTER (Repaired)
             </div>
 
-            {/* Before (Defect) Image clipped on top */}
             {beforeUrl ? (
               <div
                 className="absolute inset-0 overflow-hidden border-r-2 border-white shadow-xl"
@@ -117,35 +117,33 @@ function PhotoComparison({
                   className="absolute inset-0 w-full h-full object-cover max-w-none"
                   style={{ width: '100%', minWidth: '100%' }}
                 />
-                <div className="absolute bottom-3 left-3 bg-red-600 text-white font-bold text-[10px] px-2.5 py-1 rounded-md shadow-md z-10">
+                <div className="absolute bottom-3 left-3 bg-rose-600 text-white font-semibold text-[10px] px-2.5 py-1 rounded-md shadow-md z-10">
                   BEFORE (Defect)
                 </div>
               </div>
             ) : null}
 
-            {/* Drag Handle Line */}
             <div
               className="absolute top-0 bottom-0 w-1 bg-white cursor-ew-resize flex items-center justify-center pointer-events-none"
               style={{ left: `${sliderPos}%` }}
             >
-              <div className="w-7 h-7 rounded-full bg-white text-slate-800 shadow-lg flex items-center justify-center text-xs font-black border border-slate-300">
+              <div className="w-6 h-6 rounded-full bg-white text-slate-800 shadow-md flex items-center justify-center text-[11px] font-bold border border-slate-300">
                 ↔
               </div>
             </div>
           </div>
 
-          {/* Interactive Range Input */}
           <div className="flex items-center gap-3 px-1">
-            <span className="text-[10px] font-black text-red-600">Defect Before</span>
+            <span className="text-[10px] font-semibold text-rose-600">Defect Before</span>
             <input
               type="range"
               min={0}
               max={100}
               value={sliderPos}
               onChange={(e) => setSliderPos(Number(e.target.value))}
-              className="flex-1 accent-[#173B72] cursor-pointer"
+              className="flex-1 accent-primary cursor-pointer"
             />
-            <span className="text-[10px] font-black text-emerald-600">Repair After</span>
+            <span className="text-[10px] font-semibold text-emerald-600">Repair After</span>
           </div>
         </div>
       )}
@@ -154,21 +152,21 @@ function PhotoComparison({
       {viewMode === 'flip' && (
         <div
           onClick={() => setIsFlipped(!isFlipped)}
-          className="relative w-full h-64 sm:h-72 rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 cursor-pointer group shadow-xs"
+          className="relative w-full h-64 sm:h-72 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 cursor-pointer group shadow-xs"
         >
           <img
             src={isFlipped ? afterUrl || beforeUrl : beforeUrl || afterUrl}
             alt="Inspection Comparison"
             className="w-full h-full object-cover transition-opacity duration-200"
           />
-          <div className="absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-black shadow-md text-white bg-slate-950/80 backdrop-blur-xs flex items-center gap-1.5">
+          <div className="absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-semibold shadow-md text-white bg-slate-950/80 backdrop-blur-xs flex items-center gap-1.5">
             <RotateCw className="w-3.5 h-3.5 text-blue-400" />
             <span>Tap Image to Flip</span>
           </div>
 
           <div
-            className={`absolute bottom-3 right-3 font-black text-xs px-3 py-1.5 rounded-xl shadow-md text-white ${
-              isFlipped ? 'bg-emerald-600' : 'bg-red-600'
+            className={`absolute bottom-3 right-3 font-semibold text-xs px-2.5 py-1 rounded-md shadow-md text-white ${
+              isFlipped ? 'bg-emerald-600' : 'bg-rose-600'
             }`}
           >
             {isFlipped ? 'AFTER: TECHNICIAN REPAIR' : 'BEFORE: AUDITOR DEFECT'}
@@ -179,25 +177,25 @@ function PhotoComparison({
       {/* Mode 3: Split Side-by-Side */}
       {viewMode === 'split' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 bg-red-50/70 rounded-xl border border-red-200 space-y-2">
-            <span className="font-black text-red-900 uppercase text-[10px] tracking-wider block">
-              1. Auditor Defect Complaint
+          <div className="p-3 bg-rose-50/50 rounded-xl border border-rose-200/80 space-y-2">
+            <span className="font-semibold text-rose-900 uppercase text-[10px] tracking-wider block">
+              1. Auditor Defect Flag
             </span>
-            <div className="rounded-xl overflow-hidden border border-red-300 h-40 bg-slate-900">
+            <div className="rounded-lg overflow-hidden border border-rose-200 h-40 bg-slate-900">
               {beforeUrl ? (
                 <img src={beforeUrl} alt="Auditor Defect" className="w-full h-full object-cover" />
               ) : (
-                <div className="h-full flex items-center justify-center text-red-700 text-xs">No photo</div>
+                <div className="h-full flex items-center justify-center text-rose-700 text-xs">No photo</div>
               )}
             </div>
           </div>
 
-          <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200 space-y-2">
-            <span className="font-black text-emerald-900 uppercase text-[10px] tracking-wider block flex items-center justify-between">
+          <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-200/80 space-y-2">
+            <span className="font-semibold text-emerald-900 uppercase text-[10px] tracking-wider block flex items-center justify-between">
               <span>2. Technician Repair Proof</span>
-              <span className="text-emerald-700 font-mono text-[10px]">GPS Verified</span>
+              {geotagLat && <span className="text-emerald-700 font-mono text-[10px]">GPS Verified</span>}
             </span>
-            <div className="rounded-xl overflow-hidden border border-emerald-300 h-40 bg-slate-900">
+            <div className="rounded-lg overflow-hidden border border-emerald-200 h-40 bg-slate-900">
               {afterUrl ? (
                 <img src={afterUrl} alt="Technician Repair" className="w-full h-full object-cover" />
               ) : (
@@ -210,12 +208,12 @@ function PhotoComparison({
 
       {/* Remarks comparison strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
-          <strong className="text-red-700 font-bold block mb-0.5">Auditor Complaint:</strong>
+        <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+          <strong className="text-rose-700 font-semibold block mb-0.5">Auditor Complaint:</strong>
           <span>"{beforeRemark || 'Defect reported during audit'}"</span>
         </div>
-        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
-          <strong className="text-emerald-700 font-bold block mb-0.5">Technician Resolution:</strong>
+        <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 text-slate-700">
+          <strong className="text-emerald-700 font-semibold block mb-0.5">Technician Resolution:</strong>
           <span>"{afterRemark || 'Defect successfully repaired and verified'}"</span>
         </div>
       </div>
@@ -285,28 +283,32 @@ export default function ManagerRepairApprovalsPage() {
   };
 
   return (
-    <div className="space-y-6 pb-16 max-w-5xl mx-auto">
+    <div className="space-y-6 pb-16">
       <Navbar title="Technician Repair Sign-off & Manager Approvals" />
 
       {/* Header Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-[#173B72]">
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="px-3 py-1 rounded-full bg-emerald-400/20 text-xs font-bold uppercase tracking-wider text-emerald-300">
-            Manager Resolution Approval
-          </span>
-          <h2 className="text-xl font-black mt-1">Technician Repair Approvals</h2>
-          <p className="text-xs text-blue-100 mt-0.5 max-w-xl leading-relaxed">
-            Review completed field technician repairs and approve sign-off to automatically store resolution history with verified timestamp.
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+              Sign-Off Desk
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-semibold text-slate-500">Resolution Verification</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Technician Repair Approvals</h1>
+          <p className="text-xs text-slate-500 mt-1 max-w-xl">
+            Review completed field technician repairs and approve sign-off to store resolution history with immutable timestamps.
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-white/10 px-4 py-2.5 rounded-xl backdrop-blur-xs text-xs font-bold shrink-0">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-800 shrink-0">
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
           <span>{pendingApprovals.length} Pending Sign-offs</span>
         </div>
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
+      <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -314,16 +316,19 @@ export default function ManagerRepairApprovalsPage() {
             placeholder="Search by defect no, asset, or component..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+            className="w-full pl-9 pr-4 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-primary focus:border-primary transition-all"
           />
         </div>
+        <span className="text-xs text-slate-500">
+          Showing <strong className="text-slate-800">{filteredDefects.length}</strong> items
+        </span>
       </div>
 
       {/* Pending Approval List */}
       {isLoading ? (
         <div className="space-y-4">
-          <Skeleton className="h-64 w-full rounded-2xl" />
-          <Skeleton className="h-64 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       ) : filteredDefects.length === 0 ? (
         <EmptyState
@@ -332,60 +337,51 @@ export default function ManagerRepairApprovalsPage() {
           description="There are no pending technician repair submissions waiting for manager sign-off. All field work is approved!"
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {filteredDefects.map((defect: any) => {
             const isProcessing = approvingId === defect.id;
 
             return (
-              <Card key={defect.id} className="overflow-hidden p-6 space-y-5">
+              <div key={defect.id} className="bg-white rounded-xl border border-slate-200/80 overflow-hidden p-5 space-y-4 shadow-xs">
                 {/* Defect Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-xs text-[#173B72] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono font-bold text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                         {defect.defectNo}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-extrabold uppercase">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">
                         {defect.department?.name}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-700 text-[10px] font-extrabold uppercase border border-amber-200">
-                        {defect.priority} Priority
-                      </span>
+                      <StatusBadge status={defect.status} />
                     </div>
-                    <h3 className="font-black text-base text-slate-900 mt-1">
-                      {defect.asset?.name} • <span className="text-[#173B72]">{defect.component?.name}</span>
-                    </h3>
+                    <h3 className="font-bold text-base text-slate-900">{defect.component?.name}</h3>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Technician: <strong className="text-slate-800">{defect.technician?.name || 'Assigned Technician'}</strong>
+                      Asset: <span className="font-semibold text-slate-700">{defect.asset?.name}</span> • Venue: <span className="font-semibold text-slate-700">{defect.asset?.venue?.name}</span>
                     </p>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <Button
-                      variant="outline"
-                      size="md"
+                  <div className="flex items-center gap-2">
+                    <button
                       onClick={() => handleRejectRepair(defect.id)}
                       disabled={isProcessing}
-                      leftIcon={<XCircle className="w-4 h-4 text-red-600" />}
-                      className="border-red-200 hover:bg-red-50 text-red-700"
+                      className="px-3 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
                     >
-                      Request Rework
-                    </Button>
-
-                    <Button
-                      variant="success"
-                      size="md"
+                      <XCircle className="w-3.5 h-3.5" />
+                      <span>Request Rework</span>
+                    </button>
+                    <button
                       onClick={() => handleApproveRepair(defect.id)}
-                      isLoading={isProcessing}
-                      leftIcon={<CheckCircle2 className="w-4 h-4" />}
+                      disabled={isProcessing}
+                      className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
                     >
-                      Approve & Sign Off
-                    </Button>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>{isProcessing ? 'Approving...' : 'Sign Off & Verify'}</span>
+                    </button>
                   </div>
                 </div>
 
-                {/* Interactive Photo Comparison (Slider / Tap-to-Flip / Split) */}
+                {/* Evidence Comparison Widget */}
                 <PhotoComparison
                   beforeUrl={defect.inspectionItem?.photoUrl}
                   afterUrl={defect.repair?.repairProofPhotoUrl}
@@ -394,16 +390,7 @@ export default function ManagerRepairApprovalsPage() {
                   geotagLat={defect.repair?.geotagLat}
                   geotagLng={defect.repair?.geotagLng}
                 />
-
-                {/* Footer GPS Info */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center gap-1.5 text-emerald-700 font-mono text-[11px]">
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Location Proof: {defect.repair?.geotagLat ? `${defect.repair.geotagLat.toFixed(4)}, ${defect.repair.geotagLng.toFixed(4)}` : '11.4965, 77.2763'}</span>
-                  </div>
-                  <span className="text-[11px] text-slate-400">Resolution SLA: Verified on time</span>
-                </div>
-              </Card>
+              </div>
             );
           })}
         </div>
@@ -411,4 +398,3 @@ export default function ManagerRepairApprovalsPage() {
     </div>
   );
 }
-

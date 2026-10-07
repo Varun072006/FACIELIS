@@ -3,12 +3,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { Navbar } from '@/components/layout/navbar';
 import { StatusBadge } from '@/components/status-badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { StatCard } from '@/components/stat-card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useAuth } from '@/providers/auth-provider';
-import { Wrench, Clock, MapPin, ArrowRight, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
+import {
+  Wrench,
+  Clock,
+  MapPin,
+  ArrowRight,
+  CheckCircle2,
+  AlertOctagon,
+  History,
+  Camera,
+  Layers,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function TechnicianDashboard() {
@@ -22,14 +32,14 @@ export default function TechnicianDashboard() {
   const getPriorityBorderClass = (priority: string) => {
     switch (priority?.toUpperCase()) {
       case 'P1':
-        return 'border-l-4 border-l-red-600';
+        return 'border-l-4 border-l-rose-600';
       case 'P2':
         return 'border-l-4 border-l-amber-500';
       case 'P3':
-        return 'border-l-4 border-l-blue-600';
+        return 'border-l-4 border-l-sky-500';
       case 'P4':
       default:
-        return 'border-l-4 border-l-slate-400';
+        return 'border-l-4 border-l-slate-300';
     }
   };
 
@@ -42,8 +52,8 @@ export default function TechnicianDashboard() {
 
     if (diffMs < 0) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-red-100 text-red-800 border border-red-300">
-          <AlertOctagon className="w-3 h-3 text-red-600 shrink-0" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+          <AlertOctagon className="w-3 h-3 text-rose-600 shrink-0" />
           <span>SLA Overdue</span>
         </span>
       );
@@ -52,71 +62,138 @@ export default function TechnicianDashboard() {
     if (diffHours <= 2) {
       const minutesLeft = Math.max(1, Math.round(diffMs / (1000 * 60)));
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-red-50 text-red-700 border border-red-200 animate-pulse">
-          <Clock className="w-3 h-3 text-red-600 shrink-0" />
-          <span>SLA: {minutesLeft}m remaining (&lt; 2h!)</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 animate-pulse">
+          <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+          <span>SLA: {minutesLeft}m left (&lt; 2h!)</span>
         </span>
       );
     }
 
     const hoursLeft = Math.round(diffHours);
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-        <Clock className="w-3 h-3 text-slate-500 shrink-0" />
-        <span>SLA: ~{hoursLeft}h remaining</span>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+        <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+        <span>SLA: ~{hoursLeft}h left</span>
       </span>
     );
   };
 
-  return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-16">
-      <Navbar title="Technician Repair Operations" />
+  const defectList = Array.isArray(defects) ? defects : [];
+  const urgentCount = defectList.filter(
+    (d: any) =>
+      d.priority === 'P1' ||
+      d.isOverdue ||
+      (d.slaDeadline && new Date(d.slaDeadline).getTime() - Date.now() < 2 * 3600 * 1000)
+  ).length;
+  const pendingApprovalCount = defectList.filter(
+    (d: any) => d.status === 'REPAIRED_PENDING_CROSS'
+  ).length;
 
-      {/* Hero Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-sm space-y-2 border border-[#173B72]">
-        <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-wider text-blue-200">
-          Field Operations
-        </span>
-        <h2 className="text-xl font-black">Welcome, Technician {user?.name}</h2>
-        <p className="text-xs text-blue-100 max-w-xl leading-relaxed">
-          Review assigned repair jobs, examine original photo evidence, perform repairs, and submit geo-tagged repair proof for manager resolution approval.
-        </p>
+  return (
+    <div className="space-y-5 max-w-5xl mx-auto pb-16">
+      <Navbar title="Field Repair Operations" />
+
+      {/* Action Header Strip */}
+      <div className="bg-white rounded-xl border border-slate-200/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 text-[11px] font-semibold">
+              <Wrench className="w-3.5 h-3.5 text-amber-700" />
+              Field Maintenance
+            </span>
+            <span className="text-xs text-slate-400">Technician: {user?.name}</span>
+          </div>
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 mt-1">
+            Assigned Repair Tickets
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5 max-w-xl">
+            Examine auditor photo evidence, execute physical repairs, and upload geo-tagged resolution proof for manager clearance.
+          </p>
+        </div>
+        <Link
+          href="/technician/history"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shrink-0"
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>Repair History & Logs</span>
+        </Link>
       </div>
 
-      {/* Jobs List */}
-      <div className="space-y-4">
-        <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-          <Wrench className="w-4 h-4 text-[#173B72]" />
-          <span>Your Assigned Repair Jobs</span>
-        </h3>
+      {/* KPI Bento Strip */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        {isLoading ? (
+          <>
+            <Skeleton variant="card" />
+            <Skeleton variant="card" />
+            <Skeleton variant="card" />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Assigned Jobs"
+              value={defectList.length}
+              subtitle="Active Field Tickets"
+              icon={Wrench}
+              variant="default"
+            />
+            <StatCard
+              title="Urgent / SLA Alert"
+              value={urgentCount}
+              subtitle={urgentCount > 0 ? 'Immediate Attention' : 'All On Track'}
+              icon={Clock}
+              variant={urgentCount > 0 ? 'critical' : 'default'}
+            />
+            <StatCard
+              title="Pending Approval"
+              value={pendingApprovalCount}
+              subtitle="Awaiting Manager Review"
+              icon={CheckCircle2}
+              variant="success"
+            />
+          </>
+        )}
+      </div>
+
+      {/* Assigned Jobs List */}
+      <div className="space-y-3.5">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+            <Wrench className="w-4 h-4 text-[#173B72]" />
+            <span>Assigned Repair Queue</span>
+          </h3>
+          <span className="text-xs text-slate-500">{defectList.length} total tickets</span>
+        </div>
 
         {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-44 w-full rounded-2xl" />
-            <Skeleton className="h-44 w-full rounded-2xl" />
+          <div className="space-y-3.5">
+            <Skeleton className="h-40 w-full rounded-xl" />
+            <Skeleton className="h-40 w-full rounded-xl" />
           </div>
-        ) : Array.isArray(defects) && defects.length > 0 ? (
-          <div className="space-y-4">
-            {defects.map((defect: any) => (
-              <Card
+        ) : defectList.length > 0 ? (
+          <div className="space-y-3.5">
+            {defectList.map((defect: any) => (
+              <div
                 key={defect.id}
-                className={`overflow-hidden transition-all duration-150 ${getPriorityBorderClass(
+                className={`bento-card overflow-hidden bg-white ${getPriorityBorderClass(
                   defect.priority
                 )}`}
               >
-                <div className="p-5 sm:p-6 space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="p-4 sm:p-5 space-y-3.5">
+                  {/* Top Bar */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-b border-slate-100 pb-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                        <span className="font-mono font-bold text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                           {defect.defectNo}
                         </span>
                         {renderSlaChip(defect.slaDeadline)}
                       </div>
-                      <h4 className="font-black text-base text-slate-900 mt-1">{defect.component?.name}</h4>
+                      <h4 className="font-bold text-base text-slate-900 mt-1">{defect.component?.name}</h4>
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#173B72] shrink-0" />
-                        <span>{defect.asset?.venue?.name || 'Right Cabin'} • {defect.asset?.name}</span>
+                        <MapPin className="w-3 h-3 text-[#173B72] shrink-0" />
+                        <span>
+                          {defect.asset?.venue?.name || 'Right Cabin'} • {defect.asset?.name}
+                        </span>
                       </p>
                     </div>
 
@@ -125,25 +202,38 @@ export default function TechnicianDashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                  {/* Details + Photo Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-xs">
                     {/* Defect details */}
-                    <div className="space-y-2 text-slate-600 bg-slate-50/60 p-4 rounded-xl border border-slate-200/60">
-                      <p><strong>Category:</strong> {defect.category}</p>
-                      <p><strong>Severity:</strong> {defect.severity}</p>
-                      <p><strong>Auditor Remark:</strong> "{defect.inspectionItem?.remark || 'No remark'}"</p>
-                      <p className="flex items-center gap-1 text-slate-700">
-                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <strong>SLA Deadline:</strong> {new Date(defect.slaDeadline).toLocaleString()}
-                      </p>
+                    <div className="space-y-2 text-slate-600 bg-slate-50/60 p-3.5 rounded-lg border border-slate-100">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Category:</span>
+                        <strong className="text-slate-800">{defect.category}</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">Severity:</span>
+                        <strong className="text-slate-800">{defect.severity}</strong>
+                      </div>
+                      <div className="pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-500 block text-[11px] mb-0.5">Auditor Remark:</span>
+                        <p className="italic text-slate-700 bg-white p-2 rounded border border-slate-100">
+                          "{defect.inspectionItem?.remark || 'No remark provided'}"
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 text-slate-600 text-[11px] pt-1">
+                        <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>Deadline: {new Date(defect.slaDeadline).toLocaleString()}</span>
+                      </div>
                     </div>
 
                     {/* Photo Evidence */}
-                    <div>
-                      <p className="font-bold text-slate-700 text-[11px] uppercase tracking-wider mb-1">
-                        Auditor Defect Photo Evidence:
+                    <div className="flex flex-col">
+                      <p className="font-semibold text-slate-600 text-[11px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                        <Camera className="w-3 h-3" />
+                        <span>Auditor Photo Evidence</span>
                       </p>
                       {defect.inspectionItem?.photoUrl ? (
-                        <div className="h-32 rounded-xl overflow-hidden border border-slate-200 bg-slate-900 shadow-2xs">
+                        <div className="h-28 rounded-lg overflow-hidden border border-slate-200 bg-slate-900 shadow-2xs">
                           <img
                             src={defect.inspectionItem.photoUrl}
                             alt="Auditor Defect Photo"
@@ -151,17 +241,18 @@ export default function TechnicianDashboard() {
                           />
                         </div>
                       ) : (
-                        <div className="h-32 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 text-xs">
+                        <div className="h-28 bg-slate-50 border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs">
                           No photo attached
                         </div>
                       )}
                     </div>
                   </div>
 
+                  {/* Actions Footer */}
                   <div className="pt-2 flex justify-end">
                     {defect.status === 'REPAIRED_PENDING_CROSS' || defect.status === 'VERIFIED' ? (
-                      <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         <span>
                           {defect.status === 'VERIFIED'
                             ? 'Repair Approved & Verified'
@@ -172,8 +263,8 @@ export default function TechnicianDashboard() {
                       <Link href={`/technician/repair/${defect.id}`}>
                         <Button
                           variant="primary"
-                          size="md"
-                          rightIcon={<ArrowRight className="w-4 h-4" />}
+                          size="sm"
+                          rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
                         >
                           Submit Repair Proof
                         </Button>
@@ -181,7 +272,7 @@ export default function TechnicianDashboard() {
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         ) : (
@@ -195,4 +286,3 @@ export default function TechnicianDashboard() {
     </div>
   );
 }
-

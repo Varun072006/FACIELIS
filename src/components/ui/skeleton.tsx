@@ -6,15 +6,15 @@ export interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function Skeleton({ className = '', variant = 'rectangular', ...props }: SkeletonProps) {
   const variantStyles = {
-    text: 'h-4 rounded-md',
+    text: 'h-3.5 rounded-sm',
     circular: 'rounded-full',
-    rectangular: 'rounded-xl',
-    card: 'rounded-2xl min-h-[120px]',
+    rectangular: 'rounded-md',
+    card: 'rounded-xl min-h-[96px]',
   };
 
   return (
     <div
-      className={`animate-pulse bg-slate-200/80 ${variantStyles[variant]} ${className}`}
+      className={`animate-pulse bg-slate-200/70 ${variantStyles[variant]} ${className}`}
       {...props}
     />
   );

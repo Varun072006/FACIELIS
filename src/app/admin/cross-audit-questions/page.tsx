@@ -29,7 +29,6 @@ export default function CrossAuditQuestionsPage() {
     queryFn: () => fetch('/api/venues').then((res) => res.json()),
   });
 
-  // Set default venue if none selected yet
   React.useEffect(() => {
     if (venues && venues.length > 0 && !selectedVenueId) {
       setSelectedVenueId(venues[0].id);
@@ -150,8 +149,7 @@ export default function CrossAuditQuestionsPage() {
     try {
       const parsed = JSON.parse(bulkInput);
       const dataArray = Array.isArray(parsed) ? parsed : [parsed];
-      // Attach selected venueId if not present
-      const formatted = dataArray.map(item => ({
+      const formatted = dataArray.map((item) => ({
         ...item,
         venueId: item.venueId || selectedVenueId,
       }));
@@ -164,35 +162,35 @@ export default function CrossAuditQuestionsPage() {
   const loadSampleQuestions = () => {
     const samples = [
       {
-        question: "How many total 4-seater tables are located in this cabin/room?",
-        assetType: "TABLE",
+        question: 'How many total 4-seater tables are located in this cabin/room?',
+        assetType: 'TABLE',
         expectedCount: 10,
-        optionA: "8 Tables",
-        optionB: "10 Tables",
-        optionC: "12 Tables",
-        optionD: "6 Tables",
-        correctAnswer: "B"
+        optionA: '8 Tables',
+        optionB: '10 Tables',
+        optionC: '12 Tables',
+        optionD: '6 Tables',
+        correctAnswer: 'B',
       },
       {
-        question: "How many working ceiling fans are installed in this venue?",
-        assetType: "FAN",
+        question: 'How many working ceiling fans are installed in this venue?',
+        assetType: 'FAN',
         expectedCount: 6,
-        optionA: "4 Fans",
-        optionB: "5 Fans",
-        optionC: "6 Fans",
-        optionD: "8 Fans",
-        correctAnswer: "C"
+        optionA: '4 Fans',
+        optionB: '5 Fans',
+        optionC: '6 Fans',
+        optionD: '8 Fans',
+        correctAnswer: 'C',
       },
       {
-        question: "Where is the main entry door router/switch situated in this room?",
-        assetType: "ROUTER",
+        question: 'Where is the main entry door router/switch situated in this room?',
+        assetType: 'ROUTER',
         expectedCount: 1,
-        optionA: "Near entry door panel",
-        optionB: "Center counter",
-        optionC: "Under main desk",
-        optionD: "In corridor external box",
-        correctAnswer: "A"
-      }
+        optionA: 'Near entry door panel',
+        optionB: 'Center counter',
+        optionC: 'Under main desk',
+        optionD: 'In corridor external box',
+        correctAnswer: 'A',
+      },
     ];
     setBulkInput(JSON.stringify(samples, null, 2));
   };
@@ -204,46 +202,50 @@ export default function CrossAuditQuestionsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-16">
       <Navbar title="Cross-Audit Verification & Integrity Question Bank" />
 
       {/* Hero Banner */}
-      <div className="bg-[#173B72] text-white p-6 rounded-2xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <span className="px-3 py-1 rounded-full bg-white/10 text-xs font-semibold uppercase tracking-wider text-blue-200">
-            Integrity Verification Dashboard
-          </span>
-          <h2 className="text-xl font-extrabold">Manual Integrity Question Bank</h2>
-          <p className="text-xs text-blue-100 max-w-2xl">
-            Configure randomized verification questions that auditors must answer upon completing inspections. Inconsistencies flag audits for manager review without biased automated accusations.
+      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+              Audit Integrity Core
+            </span>
+            <span className="text-xs text-slate-400">•</span>
+            <span className="text-xs font-semibold text-slate-500">Physical Verification Bank</span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Manual Integrity Question Bank</h1>
+          <p className="text-xs text-slate-500 mt-1 max-w-xl">
+            Configure randomized verification questions that auditors answer upon inspection completion to verify physical presence.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setIsBulkOpen(true)}
-            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all"
+            className="px-3.5 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg font-semibold text-xs flex items-center gap-1.5 transition-colors"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-3.5 h-3.5" />
             <span>Bulk Upload</span>
           </button>
           <button
             onClick={openCreateModal}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md transition-all"
+            className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-semibold text-xs flex items-center gap-1.5 shadow-2xs transition-colors"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span>Create Question</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-5">
         {/* Venues Selector Sidebar */}
-        <div className="lg:col-span-1 bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-3">
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+        <div className="lg:col-span-1 bg-white rounded-xl border border-slate-200/80 p-4 shadow-xs space-y-3">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
             Filter by Venue / Room
           </span>
           {isLoadingVenues ? (
-            <div className="p-4 text-center text-xs text-gray-400">Loading venues...</div>
+            <div className="p-4 text-center text-xs text-slate-400">Loading venues...</div>
           ) : (
             <div className="space-y-1 max-h-[450px] overflow-y-auto pr-1">
               {venues?.map((v: any) => {
@@ -252,14 +254,14 @@ export default function CrossAuditQuestionsPage() {
                   <button
                     key={v.id}
                     onClick={() => setSelectedVenueId(v.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-lg text-xs font-semibold transition-all flex flex-col ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-all flex flex-col ${
                       isActive
-                        ? 'bg-[#173B72] text-white shadow-xs'
-                        : 'hover:bg-gray-50 text-gray-700'
+                        ? 'bg-[#173B72] text-white shadow-2xs'
+                        : 'hover:bg-slate-50 text-slate-700'
                     }`}
                   >
-                    <span>{v.name}</span>
-                    <span className={`text-[10px] ${isActive ? 'text-blue-200' : 'text-gray-400'}`}>
+                    <span className="font-semibold">{v.name}</span>
+                    <span className={`text-[10px] ${isActive ? 'text-blue-200' : 'text-slate-400'}`}>
                       {v.floor?.building?.name} • Floor {v.floor?.level}
                     </span>
                   </button>
@@ -271,61 +273,60 @@ export default function CrossAuditQuestionsPage() {
 
         {/* Questions Main Content */}
         <div className="lg:col-span-3 space-y-4">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-xs">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
-              <h3 className="font-extrabold text-sm text-gray-900 flex items-center gap-2">
-                <HelpCircle className="w-4 h-4 text-[#173B72]" />
+          <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+              <h3 className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <HelpCircle className="w-4 h-4 text-primary" />
                 <span>
                   Configured Integrity Questions for{' '}
-                  {venues?.find((v: any) => v.id === selectedVenueId)?.name || 'Selected Venue'}
+                  <strong className="text-primary">{venues?.find((v: any) => v.id === selectedVenueId)?.name || 'Selected Venue'}</strong>
                 </span>
               </h3>
-              <span className="text-xs text-gray-500 font-medium">
-                {questions?.length || 0} Questions configured
+              <span className="text-xs text-slate-500 font-medium">
+                {questions?.length || 0} Questions
               </span>
             </div>
 
             {isLoadingQuestions ? (
-              <div className="p-12 text-center text-xs text-gray-400">Loading verification questions...</div>
+              <div className="p-12 text-center text-xs text-slate-400">Loading verification questions...</div>
             ) : !questions || questions.length === 0 ? (
-              <div className="p-12 text-center text-xs text-gray-400 border-2 border-dashed border-gray-100 rounded-xl space-y-3">
+              <div className="p-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl space-y-3">
                 <ShieldAlert className="w-8 h-8 mx-auto text-amber-500" />
                 <p>No integrity questions configured for this venue yet.</p>
                 <button
                   onClick={openCreateModal}
-                  className="px-3.5 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg font-bold text-xs inline-flex items-center gap-1 hover:bg-blue-100"
+                  className="px-3.5 py-1.5 bg-primary/10 text-primary border border-primary/20 rounded-lg font-semibold text-xs inline-flex items-center gap-1.5 hover:bg-primary/20 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Configure First Question</span>
                 </button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 {questions.map((q: any, idx: number) => (
                   <div
                     key={q.id}
-                    className="p-5 rounded-2xl bg-gray-50 border border-gray-200 hover:shadow-xs transition-all space-y-4"
+                    className="p-4 rounded-xl bg-slate-50/70 border border-slate-200/80 hover:border-slate-300 transition-all space-y-3"
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-[#173B72] bg-blue-50 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                           Question {idx + 1} • {q.assetType || 'GENERAL'}
                         </span>
-                        <h4 className="font-extrabold text-sm text-gray-900 pt-1">{q.question}</h4>
+                        <h4 className="font-bold text-xs text-slate-900 pt-1 leading-snug">{q.question}</h4>
                       </div>
 
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => openEditModal(q)}
-                          className="p-1.5 rounded-lg border bg-white hover:bg-gray-100 text-gray-600 transition-colors"
+                          className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition-colors"
                           title="Edit Question"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(q.id)}
-                          className="p-1.5 rounded-lg border border-red-100 bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
+                          className="p-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors"
                           title="Delete Question"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -334,7 +335,7 @@ export default function CrossAuditQuestionsPage() {
                     </div>
 
                     {/* Options Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
                       {[
                         { label: 'A', value: q.optionA },
                         { label: 'B', value: q.optionB },
@@ -345,28 +346,27 @@ export default function CrossAuditQuestionsPage() {
                         return (
                           <div
                             key={opt.label}
-                            className={`p-3 rounded-lg border transition-all ${
+                            className={`p-2.5 rounded-lg border transition-all ${
                               isCorrect
-                                ? 'bg-emerald-50/50 border-emerald-300 text-emerald-800 font-bold shadow-xs'
-                                : 'bg-white border-gray-200 text-gray-600'
+                                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-bold'
+                                : 'bg-white border-slate-200 text-slate-600'
                             }`}
                           >
                             <span className="mr-1.5 font-bold">{opt.label})</span>
                             <span>{opt.value || '—'}</span>
-                            {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 inline ml-1.5" />}
+                            {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 inline ml-1" />}
                           </div>
                         );
                       })}
                     </div>
 
-                    {/* Expected Answer Meta */}
                     {q.expectedCount !== null && (
-                      <div className="pt-2 flex items-center justify-between text-xs text-gray-500 border-t border-gray-200/50">
+                      <div className="pt-2 flex items-center justify-between text-xs text-slate-500 border-t border-slate-200/60">
                         <span className="flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>Expected correct answer matches: <strong>Option {q.correctAnswer}</strong></span>
+                          <span>Expected answer: <strong className="font-semibold text-slate-800">Option {q.correctAnswer}</strong></span>
                         </span>
-                        <span>Target Count: {q.expectedCount} {q.assetType}s</span>
+                        <span className="font-mono text-[11px]">Count: {q.expectedCount} {q.assetType}s</span>
                       </div>
                     )}
                   </div>
@@ -379,21 +379,20 @@ export default function CrossAuditQuestionsPage() {
 
       {/* Create / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 border animate-scale-up">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="font-extrabold text-base text-gray-900">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900">
                 {editingQuestion ? 'Edit Integrity Question' : 'Create New Integrity Question'}
               </h3>
-              <button onClick={closeFormModal} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
-                <X className="w-5 h-5" />
+              <button onClick={closeFormModal} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              {/* Question text */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Question Text *
                 </label>
                 <textarea
@@ -402,20 +401,19 @@ export default function CrossAuditQuestionsPage() {
                   placeholder="e.g. How many total 4-seater tables are located in this room?"
                   value={questionText}
                   onChange={(e) => setQuestionText(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                  className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {/* Asset Type */}
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                    Related Asset Type / Category
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Related Asset Type
                   </label>
                   <select
                     value={assetType}
                     onChange={(e) => setAssetType(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                    className="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                   >
                     <option value="TABLE">TABLE</option>
                     <option value="CHAIR">CHAIR</option>
@@ -427,9 +425,8 @@ export default function CrossAuditQuestionsPage() {
                   </select>
                 </div>
 
-                {/* Expected Count */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Expected Count (optional)
                   </label>
                   <input
@@ -437,71 +434,69 @@ export default function CrossAuditQuestionsPage() {
                     placeholder="e.g. 10"
                     value={expectedCount}
                     onChange={(e) => setExpectedCount(e.target.value)}
-                    className="w-full p-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                    className="w-full p-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                   />
                 </div>
               </div>
 
-              {/* Options */}
-              <div className="space-y-3">
-                <span className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+              <div className="space-y-2">
+                <span className="block text-xs font-medium text-slate-700">
                   Multiple Choice Options *
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[10px] text-gray-400 font-bold mb-1">Option A *</label>
+                    <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Option A *</label>
                     <input
                       type="text"
                       required
                       placeholder="Answer option A"
                       value={optionA}
                       onChange={(e) => setOptionA(e.target.value)}
-                      className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                      className="w-full p-1.5 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-400 font-bold mb-1">Option B *</label>
+                    <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Option B *</label>
                     <input
                       type="text"
                       required
                       placeholder="Answer option B"
                       value={optionB}
                       onChange={(e) => setOptionB(e.target.value)}
-                      className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                      className="w-full p-1.5 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-400 font-bold mb-1">Option C</label>
+                    <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Option C</label>
                     <input
                       type="text"
                       placeholder="Answer option C"
                       value={optionC}
                       onChange={(e) => setOptionC(e.target.value)}
-                      className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                      className="w-full p-1.5 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-400 font-bold mb-1">Option D</label>
+                    <label className="block text-[10px] text-slate-500 font-semibold mb-0.5">Option D</label>
                     <input
                       type="text"
                       placeholder="Answer option D"
                       value={optionD}
                       onChange={(e) => setOptionD(e.target.value)}
-                      className="w-full p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                      className="w-full p-1.5 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Correct Answer Select */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-medium text-slate-700 mb-1">
                   Correct Answer Choice *
                 </label>
                 <select
                   value={correctAnswer}
                   onChange={(e) => setCorrectAnswer(e.target.value)}
-                  className="w-full p-2.5 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-[#173B72] outline-hidden"
+                  className="w-full p-2 border border-slate-300 rounded-lg bg-white text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-hidden"
                 >
                   <option value="A">Option A</option>
                   <option value="B">Option B</option>
@@ -510,18 +505,18 @@ export default function CrossAuditQuestionsPage() {
                 </select>
               </div>
 
-              <div className="pt-2 flex justify-end gap-3 border-t border-gray-100">
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={closeFormModal}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg"
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="px-5 py-2 bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold rounded-lg shadow-sm"
+                  className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg text-xs shadow-2xs"
                 >
                   {editingQuestion ? 'Update Question' : 'Create Question'}
                 </button>
@@ -533,64 +528,64 @@ export default function CrossAuditQuestionsPage() {
 
       {/* Bulk Upload Modal */}
       {isBulkOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4 border">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-1.5">
-                <Upload className="w-5 h-5 text-[#173B72]" />
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-4 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                <Upload className="w-4 h-4 text-primary" />
                 <span>Bulk Upload Integrity Questions</span>
               </h3>
-              <button onClick={() => setIsBulkOpen(false)} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
-                <X className="w-5 h-5" />
+              <button onClick={() => setIsBulkOpen(false)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleBulkUploadSubmit} className="space-y-4 text-xs">
-              <div className="p-3 bg-blue-50 text-blue-800 rounded-xl space-y-1.5">
-                <p className="font-semibold flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>JSON Array Formatting Guideline</span>
+              <div className="p-3 bg-blue-50/70 border border-blue-200/80 text-blue-900 rounded-xl space-y-1">
+                <p className="font-semibold flex items-center gap-1 text-xs">
+                  <AlertCircle className="w-4 h-4 text-primary" />
+                  <span>JSON Formatting Guideline</span>
                 </p>
-                <p>Provide a valid JSON Array with questions configuration matching the format shown below. Clicking the <strong>"Load Sample Templates"</strong> button will pre-fill a high-quality schema for you.</p>
+                <p className="text-[11px] text-slate-600">Provide a JSON array of verification questions matching schema attributes. Click "Load Sample Template" to auto-populate format.</p>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+                  <label className="block text-xs font-medium text-slate-700">
                     Bulk JSON input
                   </label>
                   <button
                     type="button"
                     onClick={loadSampleQuestions}
-                    className="text-xs text-blue-700 hover:text-blue-900 font-bold underline"
+                    className="text-xs text-primary hover:underline font-semibold"
                   >
-                    Load Sample Templates
+                    Load Sample Template
                   </button>
                 </div>
                 <textarea
-                  rows={10}
+                  rows={9}
                   required
                   placeholder="Paste JSON array here..."
                   value={bulkInput}
                   onChange={(e) => setBulkInput(e.target.value)}
-                  className="w-full p-3 rounded-lg border border-gray-300 font-mono text-[11px] focus:ring-2 focus:ring-[#173B72] outline-hidden bg-gray-50/50"
+                  className="w-full p-2.5 rounded-lg border border-slate-300 font-mono text-[11px] focus:ring-1 focus:ring-primary focus:border-primary outline-hidden bg-slate-50/50"
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-3 border-t border-gray-100">
+              <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsBulkOpen(false)}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg"
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={bulkMutation.isPending}
-                  className="px-5 py-2 bg-[#173B72] hover:bg-[#1e4a8e] text-white font-bold rounded-lg shadow-sm"
+                  className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg text-xs shadow-2xs"
                 >
-                  {bulkMutation.isPending ? 'Uploading...' : 'Upload & Save Questions'}
+                  {bulkMutation.isPending ? 'Uploading...' : 'Save Questions'}
                 </button>
               </div>
             </form>

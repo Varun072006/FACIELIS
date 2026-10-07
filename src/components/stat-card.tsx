@@ -10,6 +10,7 @@ interface StatCardProps {
   variant?: 'default' | 'success' | 'warning' | 'critical';
   sparkline?: React.ReactNode;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export function StatCard({
@@ -21,40 +22,68 @@ export function StatCard({
   variant = 'default',
   sparkline,
   children,
+  className = '',
 }: StatCardProps) {
+  // Enterprise restrained semantic styling
   const variantStyles = {
-    default: 'bg-white border-slate-200/80 text-slate-900',
-    success: 'bg-emerald-50/40 border-emerald-200 text-emerald-950',
-    warning: 'bg-amber-50/40 border-amber-200 text-amber-950',
-    critical: 'bg-red-50/40 border-red-200 text-red-950',
+    default: {
+      border: 'border-slate-200/80',
+      iconBg: 'bg-slate-100 text-[#173B72]',
+      trendColor: 'text-[#173B72]',
+      accentBar: '',
+    },
+    success: {
+      border: 'border-emerald-200/90',
+      iconBg: 'bg-emerald-50 text-emerald-700',
+      trendColor: 'text-emerald-700 font-semibold',
+      accentBar: 'border-t-2 border-t-emerald-500',
+    },
+    warning: {
+      border: 'border-amber-200/90',
+      iconBg: 'bg-amber-50 text-amber-700',
+      trendColor: 'text-amber-700 font-semibold',
+      accentBar: 'border-t-2 border-t-amber-500',
+    },
+    critical: {
+      border: 'border-rose-200/90',
+      iconBg: 'bg-rose-50 text-rose-700',
+      trendColor: 'text-rose-700 font-semibold',
+      accentBar: 'border-t-2 border-t-rose-500',
+    },
   };
 
-  const iconStyles = {
-    default: 'bg-slate-100 text-[#173B72]',
-    success: 'bg-emerald-100 text-emerald-700',
-    warning: 'bg-amber-100 text-amber-700',
-    critical: 'bg-red-100 text-red-700',
-  };
+  const style = variantStyles[variant] || variantStyles.default;
 
   return (
-    <div className={`p-5 rounded-2xl border ${variantStyles[variant]} shadow-xs flex flex-col justify-between transition-all hover:shadow-md bg-white`}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider truncate">{title}</p>
-          <div className="flex items-baseline gap-3 mt-1">
-            <h3 className="text-2xl font-black tracking-tight text-slate-900">{value}</h3>
-            {sparkline && <div className="flex-1 max-w-[110px] h-9">{sparkline}</div>}
+    <div
+      className={`bento-card p-4 sm:p-4.5 bg-white border ${style.border} ${style.accentBar} rounded-xl shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between ${className}`}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">
+            {title}
+          </p>
+          <div className={`p-1.5 rounded-lg ${style.iconBg} shrink-0`}>
+            <Icon className="w-4 h-4" />
           </div>
         </div>
-        <div className={`p-2.5 rounded-xl ${iconStyles[variant]} shrink-0 shadow-2xs`}>
-          <Icon className="w-5 h-5" />
+
+        <div className="flex items-baseline justify-between gap-2 mt-2">
+          <h3 className="text-2xl font-bold tracking-tight text-slate-900 font-feature-numeric">
+            {value}
+          </h3>
+          {sparkline && <div className="w-24 h-7 shrink-0">{sparkline}</div>}
         </div>
       </div>
+
       {children}
+
       {(subtitle || trend) && (
-        <div className="mt-3 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-2.5">
+        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
           <span className="truncate">{subtitle}</span>
-          {trend && <span className="font-bold text-[#173B72] shrink-0 ml-1">{trend}</span>}
+          {trend && (
+            <span className={`shrink-0 ml-1.5 ${style.trendColor}`}>{trend}</span>
+          )}
         </div>
       )}
     </div>

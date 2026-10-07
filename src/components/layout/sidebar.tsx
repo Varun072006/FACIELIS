@@ -25,6 +25,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from 'lucide-react';
 
 export function Sidebar() {
@@ -36,7 +37,6 @@ export function Sidebar() {
 
   useEffect(() => {
     setMounted(true);
-    // Optional: read collapse preference from localStorage
     try {
       const saved = localStorage.getItem('facielis_sidebar_collapsed');
       if (saved !== null) setCollapsed(saved === 'true');
@@ -51,14 +51,13 @@ export function Sidebar() {
     } catch {}
   };
 
-  // Close mobile drawer when route changes
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
   if (!mounted || !user) {
     return (
-      <aside className="hidden lg:flex w-64 bg-white border-r border-gray-200 flex-col h-screen sticky top-0 z-30" />
+      <aside className="hidden lg:flex w-60 bg-white border-r border-slate-200 flex-col h-screen sticky top-0 z-30" />
     );
   }
 
@@ -115,56 +114,60 @@ export function Sidebar() {
   const renderNavContent = (isCollapsedMode = false) => (
     <div className="flex flex-col h-full bg-white select-none">
       {/* Brand Header */}
-      <div className={`border-b border-gray-100 flex items-center justify-between ${isCollapsedMode ? 'p-4 justify-center' : 'p-5'}`}>
+      <div
+        className={`border-b border-slate-100 flex items-center justify-between ${
+          isCollapsedMode ? 'p-3 justify-center' : 'px-4 py-3.5'
+        }`}
+      >
         <div className={`flex items-center gap-2.5 ${isCollapsedMode ? 'justify-center' : ''}`}>
-          <div className="w-8 h-8 rounded-xl bg-[#173B72] text-white flex items-center justify-center font-black text-lg shadow-sm shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-bold text-sm shadow-2xs shrink-0 tracking-tight">
             F
           </div>
           {!isCollapsedMode && (
-            <div className="overflow-hidden transition-all duration-200">
-              <h1 className="font-black text-xl tracking-tight text-[#173B72] leading-none">FACIELIS</h1>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold mt-0.5">Facility Assurance</p>
+            <div className="overflow-hidden">
+              <h1 className="font-bold text-sm tracking-tight text-slate-900 leading-none">FACIELIS</h1>
+              <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-0.5">Facility Assurance</p>
             </div>
           )}
         </div>
 
-        {/* Desktop Collapse Toggle (only in desktop sidebar) */}
+        {/* Desktop Collapse Toggle */}
         <button
           onClick={toggleCollapse}
-          className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+          className="hidden lg:flex p-1 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           title={isCollapsedMode ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsedMode ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          {isCollapsedMode ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
         </button>
 
         {/* Mobile close button */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="lg:hidden p-1.5 rounded-lg text-gray-500 hover:bg-gray-100"
+          className="lg:hidden p-1 rounded-md text-slate-500 hover:bg-slate-100"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Role Badge */}
+      {/* Role Pill */}
       {!isCollapsedMode ? (
-        <div className="px-5 py-2.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
-          <span className="text-xs text-gray-500 font-medium">Role:</span>
-          <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-[#173B72]/10 text-[#173B72]">
+        <div className="px-4 py-2 border-b border-slate-100 bg-slate-50/60 flex items-center justify-between">
+          <span className="text-[11px] text-slate-500 font-medium">Workspace</span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#173B72]/10 text-[#173B72]">
             {role.replace('_', ' ')}
           </span>
         </div>
       ) : (
-        <div className="py-2 border-b border-gray-100 flex justify-center">
+        <div className="py-2 border-b border-slate-100 flex justify-center">
           <span
-            className="w-2.5 h-2.5 rounded-full bg-[#173B72]"
-            title={`Role: ${role.replace('_', ' ')}`}
+            className="w-2 h-2 rounded-full bg-[#173B72]"
+            title={`Workspace: ${role.replace('_', ' ')}`}
           />
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-2.5 px-2 space-y-0.5">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const rootPaths = ['/admin', '/manager', '/auditor', '/technician', '/owner'];
@@ -180,17 +183,17 @@ export function Sidebar() {
               prefetch={true}
               onClick={() => setMobileOpen(false)}
               title={isCollapsedMode ? link.label : undefined}
-              className={`group flex items-center rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                isCollapsedMode ? 'justify-center p-3' : 'gap-3 px-3 py-2.5'
+              className={`group flex items-center rounded-lg text-xs transition-all duration-100 ${
+                isCollapsedMode ? 'justify-center p-2.5' : 'gap-2.5 px-2.5 py-2'
               } ${
                 isActive
-                  ? 'border-l-4 border-l-[#173B72] bg-[#173B72]/10 text-[#173B72] font-bold shadow-2xs'
-                  : 'border-l-4 border-l-transparent text-gray-600 hover:bg-gray-100/80 hover:text-gray-900'
+                  ? 'bg-[#173B72]/8 text-[#173B72] font-semibold border-l-2 border-[#173B72]'
+                  : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900 border-l-2 border-transparent'
               }`}
             >
               <Icon
                 className={`w-4 h-4 shrink-0 transition-colors ${
-                  isActive ? 'text-[#173B72]' : 'text-gray-500 group-hover:text-gray-900'
+                  isActive ? 'text-[#173B72]' : 'text-slate-400 group-hover:text-slate-700'
                 }`}
               />
               {!isCollapsedMode && <span className="truncate">{link.label}</span>}
@@ -200,25 +203,34 @@ export function Sidebar() {
       </nav>
 
       {/* User Profile Footer */}
-      <div className={`border-t border-gray-100 bg-gray-50/60 flex items-center ${isCollapsedMode ? 'p-3 flex-col gap-2' : 'p-4 justify-between'}`}>
+      <div
+        className={`border-t border-slate-100 bg-slate-50/50 flex items-center ${
+          isCollapsedMode ? 'p-2.5 flex-col gap-2' : 'p-3 justify-between'
+        }`}
+      >
         {!isCollapsedMode ? (
           <>
-            <div className="truncate pr-2">
-              <p className="text-xs font-bold text-gray-900 truncate">{user.name}</p>
-              <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+            <div className="flex items-center gap-2 min-w-0 pr-2">
+              <div className="w-7 h-7 rounded-full bg-[#173B72] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                {user?.name ? user.name.charAt(0) : 'U'}
+              </div>
+              <div className="truncate">
+                <p className="text-xs font-semibold text-slate-900 truncate leading-tight">{user.name}</p>
+                <p className="text-[10px] text-slate-400 truncate leading-tight">{user.email}</p>
+              </div>
             </div>
             <button
               onClick={logout}
               title="Sign Out"
-              className="p-2 rounded-xl hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors shrink-0"
+              className="p-1.5 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors shrink-0"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </>
         ) : (
           <>
             <div
-              className="w-8 h-8 rounded-full bg-[#173B72] text-white flex items-center justify-center text-xs font-bold shadow-xs cursor-default"
+              className="w-7 h-7 rounded-full bg-[#173B72] text-white flex items-center justify-center text-xs font-bold cursor-default"
               title={`${user.name} (${user.email})`}
             >
               {user?.name ? user.name.charAt(0) : 'U'}
@@ -226,9 +238,9 @@ export function Sidebar() {
             <button
               onClick={logout}
               title="Sign Out"
-              className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+              className="p-1 rounded-md hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </>
         )}
@@ -238,52 +250,49 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile Top App Bar (visible on < lg screens) */}
-      <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-black text-base shadow-sm">
+      {/* Mobile Top App Bar */}
+      <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-2.5 flex items-center justify-between shadow-2xs">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-[#173B72] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
             F
           </div>
           <div>
-            <h1 className="font-black text-base tracking-tight text-[#173B72]">FACIELIS</h1>
-            <p className="text-[9px] text-gray-500 uppercase tracking-widest font-bold">Facility Assurance</p>
+            <h1 className="font-bold text-sm tracking-tight text-slate-900 leading-none">FACIELIS</h1>
+            <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">Facility Assurance</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#173B72]/10 text-[#173B72]">
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#173B72]/10 text-[#173B72]">
             {role.replace('_', ' ')}
           </span>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
+            className="p-1.5 rounded-md text-slate-700 hover:bg-slate-100 focus:outline-none"
             aria-label="Toggle Mobile Menu"
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* Desktop Sticky Sidebar (visible on >= lg screens, collapsible w-20 / w-64) */}
+      {/* Desktop Sticky Sidebar */}
       <aside
-        className={`hidden lg:flex border-r border-gray-200 flex-col h-screen sticky top-0 z-30 transition-all duration-200 ease-in-out ${
-          collapsed ? 'w-20' : 'w-64'
+        className={`hidden lg:flex border-r border-slate-200 flex-col h-screen sticky top-0 z-30 transition-all duration-150 ease-in-out ${
+          collapsed ? 'w-16' : 'w-60'
         }`}
       >
         {renderNavContent(collapsed)}
       </aside>
 
-      {/* Mobile Drawer (visible on < lg screens when mobileOpen === true) */}
+      {/* Mobile Drawer */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
           <div
             onClick={() => setMobileOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity"
           />
-
-          {/* Drawer Sidebar Content */}
-          <aside className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl z-10 flex flex-col">
+          <aside className="relative w-4/5 max-w-xs bg-white h-full shadow-xl z-10 flex flex-col border-r border-slate-200">
             {renderNavContent(false)}
           </aside>
         </div>
