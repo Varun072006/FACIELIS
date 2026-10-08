@@ -3,6 +3,10 @@ import bcrypt from 'bcryptjs';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'facielis_super_secret_jwt_key_2026';
 
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+  console.warn('⚠️ [SECURITY WARNING] Insecure or short JWT_SECRET detected in production! Please set a strong 64-character random JWT_SECRET in .env.');
+}
+
 export interface TokenPayload {
   userId: string;
   email: string;

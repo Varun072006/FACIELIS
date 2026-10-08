@@ -19,7 +19,22 @@ const server = http.createServer(app);
 initSocketServer(server);
 
 // Middleware
-app.use(cors({ origin: true, credentials: true }));
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:3847', 'http://localhost:3000', 'http://localhost:5000'];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
@@ -29,9 +44,37 @@ app.use('/images', express.static(path.join(process.cwd(), 'public', 'images')))
 app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Healthcheck
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+// Production-Grade Healthcheck
+app.get('/api/health', async (_req, res) => {
+  try {
+    const dbStart = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    const dbLatency = Date.now() - dbStart;
+
+    res.json({
+      status: 'healthy',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+      database: {
+        status: 'connected',
+        latencyMs: dbLatency,
+      },
+      memory: {
+        rssMb: Math.round(process.memoryUsage().rss / 1024 / 1024),
+        heapUsedMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      },
+    });
+  } catch (err: any) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      database: {
+        status: 'disconnected',
+        error: err.message,
+      },
+    });
+  }
 });
 
 // API Routes
@@ -61,3 +104,27 @@ server.listen(PORT, async () => {
   }
   console.log(`==================================================\n`);
 });
+
+// Graceful process termination for cloud orchestrators (Docker, K8s, Render, Railway)
+const handleShutdown = async (signal: string) => {
+  console.log(`\n🛑 Received ${signal}. Draining connections and shutting down gracefully...`);
+  server.close(async () => {
+    console.log('HTTP and WebSocket server closed.');
+    try {
+      await prisma.$disconnect();
+      console.log('Database client disconnected cleanly.');
+      process.exit(0);
+    } catch (err) {
+      console.error('Error during database disconnect:', err);
+      process.exit(1);
+    }
+  });
+
+  setTimeout(() => {
+    console.error('Forcefully terminating process after 10s timeout');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+process.on('SIGINT', () => handleShutdown('SIGINT'));

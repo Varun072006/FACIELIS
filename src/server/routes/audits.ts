@@ -134,7 +134,7 @@ router.get('/:id', async (req: AuthenticatedRequest, res: Response): Promise<any
           },
         },
         score: true,
-        certificate: true,
+        certificate: { orderBy: { validFrom: 'desc' } },
       },
     });
 

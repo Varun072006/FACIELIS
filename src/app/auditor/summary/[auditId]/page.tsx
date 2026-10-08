@@ -35,7 +35,9 @@ export default function AuditSummaryPage({ params }: { params: Promise<{ auditId
   if (!audit) return <div className="p-8 text-center text-xs text-rose-500">Audit not found</div>;
 
   const score = audit.score;
-  const cert = audit.certificate;
+  const cert = Array.isArray(audit.certificate)
+    ? audit.certificate[0] ?? null
+    : audit.certificate;
 
   return (
     <div className="space-y-5 pb-20 max-w-5xl mx-auto">

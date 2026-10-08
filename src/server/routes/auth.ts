@@ -5,8 +5,24 @@ import { logAuditEvent } from '../middleware/auth.middleware';
 
 const router = Router();
 
+// In-memory brute force protection: max 10 failed attempts per 15 minutes per IP
+const loginRateLimitMap = new Map<string, { failedAttempts: number; resetTime: number }>();
+const MAX_FAILED_ATTEMPTS = 10;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
+
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response): Promise<any> => {
+  const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+
+  const rateRecord = loginRateLimitMap.get(clientIp);
+  if (rateRecord && rateRecord.resetTime > now && rateRecord.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+    const minutesLeft = Math.ceil((rateRecord.resetTime - now) / 60000);
+    return res.status(429).json({
+      error: `Too many failed login attempts from this IP. Please try again in ${minutesLeft} minute(s).`,
+    });
+  }
+
   try {
     const { email, password } = req.body || {};
 
@@ -20,13 +36,28 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
     });
 
     if (!user || user.deletedAt) {
+      // Record failed attempt
+      const current = loginRateLimitMap.get(clientIp) || { failedAttempts: 0, resetTime: now + LOCKOUT_WINDOW_MS };
+      loginRateLimitMap.set(clientIp, {
+        failedAttempts: current.failedAttempts + 1,
+        resetTime: current.resetTime > now ? current.resetTime : now + LOCKOUT_WINDOW_MS,
+      });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     const isValid = await comparePassword(password, user.passwordHash);
     if (!isValid) {
+      // Record failed attempt
+      const current = loginRateLimitMap.get(clientIp) || { failedAttempts: 0, resetTime: now + LOCKOUT_WINDOW_MS };
+      loginRateLimitMap.set(clientIp, {
+        failedAttempts: current.failedAttempts + 1,
+        resetTime: current.resetTime > now ? current.resetTime : now + LOCKOUT_WINDOW_MS,
+      });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+
+    // Reset rate limiter on successful authentication
+    loginRateLimitMap.delete(clientIp);
 
     const token = signToken({
       userId: user.id,
@@ -37,11 +68,13 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
       departmentId: user.departmentId,
     });
 
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('facielis_token', token, {
       httpOnly: true,
       path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
+      sameSite: isProd ? 'strict' : 'lax',
+      secure: isProd,
     });
 
     // Log successful login
@@ -76,7 +109,12 @@ router.post('/login', async (req: Request, res: Response): Promise<any> => {
 
 // POST /api/auth/logout
 router.post('/logout', async (req: Request, res: Response) => {
-  res.clearCookie('facielis_token', { path: '/' });
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie('facielis_token', {
+    path: '/',
+    sameSite: isProd ? 'strict' : 'lax',
+    secure: isProd,
+  });
   return res.json({ success: true });
 });
 
